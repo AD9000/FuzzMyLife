@@ -15,6 +15,11 @@ class FileType(Enum):
     NONE = auto()
 
 
+count = 0
+xmlTemplate = None
+jsonTemplate = {}
+#Values can probably be removed but for now it used for debugging
+values = []
 '''
 gives file extension: txt, json => FileType
 '''
@@ -56,29 +61,98 @@ def classifyFile():
 
 def parseCsv(pParsed):
     parsed = []
+    cpl = 0
     for line in pParsed:
         parsed += line.split(',')
-    return { 'values': parsed }
+        cpl = len(line.split(',')) - 1
+    return { 'values': parsed, 'cpl': cpl, 'file': FileType.CSV }
+
+def reconstructCsv(fuzzed):
+    csv = ""
+    count = 0
+    for i in fuzzed['values']:
+        if count == fuzzed['cpl']:
+            count = 0
+            csv += i + "\n"
+        else:
+            csv += i + ","
+            count += 1
+    return csv
+
 
 def parseJson(pParsed):
-    return { 'values': list(pParsed.values()) }
+    print(pParsed)
+    global jsonTemplate
+    global values
+    global count
+    count = 0
+    values = []
+    jsonTemplate = {}
+    recJson(pParsed)
+    return { 'values': values, 'template': jsonTemplate, 'file': FileType.JSON }
+
+def recJson(obj):
+    global jsonTemplate
+    global count
+    global values
+    for key in obj.keys():
+        if isinstance(obj[key], list):
+            jsonTemplate[key] = []
+            for value in obj[key]:
+                jsonTemplate[key].append(count)
+                count = count + 1
+                values.append(value)
+        elif isinstance(obj[key], dict):
+            recJson(obj[key])
+        else:
+            jsonTemplate[key] = count
+            count = count + 1
+            values.append(obj[key])
+
+
+def reconstructJson(fuzzed):
+    obj = fuzzed['template']
+    values = fuzzed['values']
+    repJson(obj, values)
+    return obj
+
+def repJson(obj, values):
+    for key in obj.keys():
+        if isinstance(obj[key], list):
+            replist = []
+            for value in obj[key]:
+                replist.append(values[value])
+            obj[key] = replist
+        elif isinstance(obj[key], dict):
+            repJson(obj[key], values)
+        else:
+            obj[key] = values[obj[key]]
+
+
 
 def parsePlaintext(pParsed):
-    return pParsed.split('\n')[:-1]
+    return { 'values': pParsed.split('\n')[:-1], 'file': FileType.PLAINTEXT }
 
-count = 0
-xmlTemplate = None
-values = []
+def reconstructPlaintext(fuzzed):
+    pt = ""
+    for i in range(0, len(fuzzed['values'])):
+        if i == (len(fuzzed['values']) - 1):
+            pt += fuzzed['values'][i]
+        else:
+            pt += fuzzed['values'][i] + "\n"
+    return pt
+
+
 def parseXml(pParsed):
     global xmlTemplate
     global count
+    global values
+    values = []
     root = pParsed.getroot()
     recXml(root)
     xmlTemplate = root
     count = 0
-    global values
-    print(values)
-    return {'values': values, 'template': xmlTemplate, 'File': FileType.XML}
+    return {'values': values, 'template': xmlTemplate, 'file': FileType.XML }
 
 def recXml(root):
     global count
@@ -128,12 +202,22 @@ def getDictFromInput():
 '''
 convert back the dict from the fuzzer to valid input
 '''
-def getInputFromDict(dic, fileType):
-    pass
-
+def getInputFromDict(dic):
+    output = ""
+    if dic['file'] == FileType.JSON:
+        output = reconstructJson(dic)
+    elif dic['file'] == FileType.PLAINTEXT:
+        output = reconstructPlaintext(dic)
+    elif dic['file'] == FileType.CSV:
+        output = reconstructCsv(dic)
+    elif dic['file'] == FileType.XML:
+        output = reconstructXml(dic)
+    else:
+        print("Error, invalid file type")
+        exit()
+    
+    print(output)
+    return output
 
 example = getDictFromInput()
-#print(readXML())
-#print(ET.tostring(xmlTemplate).decode())
-#print(reconstructXml())
-print(reconstructXml(example))
+getInputFromDict(example)
