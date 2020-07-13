@@ -1,11 +1,7 @@
 from enum import Enum, auto
-import sys
 import json
 import xml.etree.ElementTree as ET
 import csv
-
-binary = sys.argv[1]
-inputFileName = sys.argv[2]
 
 class FileType(Enum):
     PLAINTEXT = auto()
@@ -23,7 +19,7 @@ values = []
 '''
 gives file extension: txt, json => FileType
 '''
-def classifyFile():
+def classifyFile(inputFileName: str):
     with open(inputFileName, 'r') as fp:
         try:
             loaded = json.load(fp)
@@ -109,9 +105,10 @@ def recJson(obj):
             count = count + 1
             values.append(obj[key])
 
-
+# fuzzed is the dict
 def reconstructJson(fuzzed):
-    obj = fuzzed['template']
+    obj = json.loads(json.dumps(fuzzed['template']))
+    # obj = fuzzed['template']
     values = fuzzed['values']
     repJson(obj, values)
     return obj
@@ -127,7 +124,6 @@ def repJson(obj, values):
             repJson(obj[key], values)
         else:
             obj[key] = values[obj[key]]
-
 
 
 def parsePlaintext(pParsed):
@@ -195,12 +191,12 @@ parsers = {FileType.NONE: lambda: {'values': []}, FileType.JSON: parseJson, File
 '''
 convert the input file to something the fuzzer likes (a dictonary)
 '''
-def getDictFromInput():
-    fileType, pparsed = classifyFile()
+def getDictFromInput(inputFileName: str):
+    fileType, pparsed = classifyFile(inputFileName)
     return parsers[fileType](pparsed)
 
 '''
-convert back the dict from the fuzzer to valid input
+convert back the dictionary from the fuzzer to valid input
 '''
 def getInputFromDict(dic):
     output = ""
@@ -218,6 +214,3 @@ def getInputFromDict(dic):
     
     print(output)
     return output
-
-example = getDictFromInput()
-getInputFromDict(example)
