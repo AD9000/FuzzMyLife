@@ -2,6 +2,8 @@ from enum import Enum, auto
 import json
 import xml.etree.ElementTree as ET
 import csv
+import sys
+import copy
 
 class FileType(Enum):
     PLAINTEXT = auto()
@@ -107,8 +109,7 @@ def recJson(obj):
 
 # fuzzed is the dict
 def reconstructJson(fuzzed):
-    obj = json.loads(json.dumps(fuzzed['template']))
-    # obj = fuzzed['template']
+    obj = copy.deepcopy(fuzzed['template'])
     values = fuzzed['values']
     repJson(obj, values)
     return obj
@@ -169,7 +170,7 @@ def recXml(root):
         recXml(child)
 
 def reconstructXml(fuzzed):
-    root = fuzzed['template']
+    root = copy.deepcopy(fuzzed['template'])
     values = fuzzed['values']
     repXml(root, values)
     return ET.tostring(root).decode()
@@ -212,5 +213,4 @@ def getInputFromDict(dic):
         print("Error, invalid file type")
         exit()
     
-    print(output)
     return output
