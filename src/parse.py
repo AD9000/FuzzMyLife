@@ -175,10 +175,14 @@ def recXml(root) -> None:
 def reconstructXml(fuzzed: dict) -> str:
     root = copy.deepcopy(fuzzed['template'])
     values = fuzzed['values']
+    for i in range(0, len(values)):
+        if isinstance(values[i], int):
+            values[i] = str(values[i])
     repXml(root, values)
     return ET.tostring(root).decode()
     
 def repXml(root, values) -> None:
+    print(values)
     for child in root:
         if len(child.attrib) > 0:
             replace = {}
@@ -187,6 +191,7 @@ def repXml(root, values) -> None:
             child.attrib = replace
         if child.text is not None and "\n      " not in child.text:
             child.text = values[int(child.text)]
+            print(child.text)
         repXml(child, values)
 
 

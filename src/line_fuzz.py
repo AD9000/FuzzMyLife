@@ -1,6 +1,7 @@
 import parse
 from subprocess import *
 import copy
+import gen_fuzz
 
 limit_checkr = 0
 
@@ -14,7 +15,7 @@ def addLines(inputWords: dict) -> str:
     for i in inputWords['values']:
         values.append(i)
     inputWords['values'] = values
-    res = send(inputWords)
+    res = gen_fuzz.fast_fuzz(inputWords)
     if res is not None:
         print("RESFDSAGDSFADS")
         print("====================")
@@ -33,9 +34,9 @@ def addCpl(inputWords: dict) -> dict:
     values = inputWords['values']
     for i in range(1, len(values)):
         if len(values) % i == 0:
-            inputWords['cpl'] = i
+            inputWords['cpl'] = i - 1
             print(inputWords)
-            res = send(inputWords)
+            res = gen_fuzz.fast_fuzz(inputWords)
             if res is not None:
                 return res
     return None
