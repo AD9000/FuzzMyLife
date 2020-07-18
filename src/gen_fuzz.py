@@ -1,5 +1,4 @@
 import parse
-from pwn import *
 from subprocess import *
 import json
 import copy

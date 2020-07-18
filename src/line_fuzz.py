@@ -4,27 +4,29 @@ import copy
 
 limit_checkr = 0
 
-def addLines(inputWords: dict) -> dict:
+def addLines(inputWords: dict) -> str:
     global limit_checkr
     limit_checkr += 1
-    if (limit_checkr > 50):
+    if (limit_checkr > 8):
         return None
     
     values = copy.deepcopy(inputWords['values'])
     for i in inputWords['values']:
         values.append(i)
     inputWords['values'] = values
-    
     res = send(inputWords)
     if res is not None:
+        print("RESFDSAGDSFADS")
+        print("====================")
+        print(res)
         return res
     else:
-        state = copy.deepcopy(inputWords)
-        res = addCpl(inputWords)
-        if res is not None:
-            return res
-        else:
-            addLines(state)
+        # state = copy.deepcopy(inputWords)
+        # res = addCpl(state)
+        # if res is not None:
+        #     return res
+        # else:
+        addLines(inputWords)
 
 def addCpl(inputWords: dict) -> dict:
     values = inputWords['values']
@@ -38,30 +40,23 @@ def addCpl(inputWords: dict) -> dict:
     return None
 
 # return True on segfault
-def send(words: dict) -> bool:
+def send(words: dict) -> str:
     print("\n\n\n\n=============================================")
-    # print(words)
-    # print("\n\n\n\n=============================================")
     input = parse.getInputFromDict(words)
 
-    print(input)
     p = Popen(binary, stdin=PIPE)
-    outs, errs = p.communicate(input.encode())
-    print(outs)
-    print(errs)
+    p.communicate(input.encode())
 
-    if p.returncode != 0: # 139 for segfault
+    if p.returncode != 0:
         print(p.returncode)
         return input
-
     return None
 
 def lineFuzz(_binary: str, inputWords: dict) -> str:
-    #This can only currenrtly be done with csv 
     global binary 
     binary = _binary
     if (inputWords['file'] != parse.FileType.CSV):
         return None
-    print(inputWords)
-    crashInput = addLines(inputWords.copy())
+    crashInput = addLines(inputWords)
+    print("crash input is: " + str(crashInput))
     return crashInput
