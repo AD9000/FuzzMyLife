@@ -74,9 +74,9 @@ def reconstructCsv(fuzzed: dict) -> str:
     for i in fuzzed['values']:
         if count == fuzzed['cpl']:
             count = 0
-            csv += i + "\n"
+            csv += str(i) + "\n"
         else:
-            csv += i + ","
+            csv += str(i) + ","
             count += 1
     return csv
 

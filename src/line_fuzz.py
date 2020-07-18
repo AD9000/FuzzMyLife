@@ -55,8 +55,7 @@ def send(words: dict) -> str:
     return None
 
 def lineFuzz(_binary: str, inputWords: dict) -> str:
-    global binary 
-    binary = _binary
+    gen_fuzz.binary = _binary
     if (inputWords['file'] != parse.FileType.CSV):
         return None
     crashInput = addLines(inputWords)
