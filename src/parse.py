@@ -21,12 +21,13 @@ values = []
 '''
 gives file extension: txt, json => FileType
 '''
-def classifyFile(inputFileName: str):
+def classifyFile(inputFileName: str) -> list:
     with open(inputFileName, 'r') as fp:
         try:
             loaded = json.load(fp)
             return [FileType.JSON, loaded]
         except:
+            pass
             print('not json')
 
         fp.seek(0)
@@ -34,18 +35,20 @@ def classifyFile(inputFileName: str):
             tree = ET.parse(inputFileName)
             return [FileType.XML, tree]
         except:
-            print('not xml')
+            pass
+            # print('not xml')
 
         fp.seek(0)
         lastc = len(fp.readline().split(','))
         if (lastc == 1):
-            print('not csv')
+            pass
+            # print('not csv')
         else:
             isCsv = True
             for i in fp.readlines():
                 if (len(i.split(',')) != lastc):    
                     isCsv = False
-                    print('not csv')
+                    # print('not csv')
                     break
             if isCsv:
                 fp.seek(0)
@@ -65,7 +68,7 @@ def parseCsv(pParsed):
         cpl = len(line.split(',')) - 1
     return { 'values': parsed, 'cpl': cpl, 'file': FileType.CSV }
 
-def reconstructCsv(fuzzed):
+def reconstructCsv(fuzzed: dict) -> str:
     csv = ""
     count = 0
     for i in fuzzed['values']:
@@ -108,11 +111,11 @@ def recJson(obj):
             values.append(obj[key])
 
 # fuzzed is the dict
-def reconstructJson(fuzzed):
+def reconstructJson(fuzzed: dict) -> str:
     obj = copy.deepcopy(fuzzed['template'])
     values = fuzzed['values']
     repJson(obj, values)
-    return obj
+    return json.dumps(obj)
 
 def repJson(obj, values):
     for key in obj.keys():
@@ -130,7 +133,7 @@ def repJson(obj, values):
 def parsePlaintext(pParsed):
     return { 'values': pParsed.split('\n')[:-1], 'file': FileType.PLAINTEXT }
 
-def reconstructPlaintext(fuzzed):
+def reconstructPlaintext(fuzzed: dict) -> str:
     pt = ""
     for i in range(0, len(fuzzed['values'])):
         if i == (len(fuzzed['values']) - 1):
@@ -169,7 +172,7 @@ def recXml(root):
             count = count + 1
         recXml(child)
 
-def reconstructXml(fuzzed):
+def reconstructXml(fuzzed: dict) -> str:
     root = copy.deepcopy(fuzzed['template'])
     values = fuzzed['values']
     repXml(root, values)
@@ -194,12 +197,13 @@ convert the input file to something the fuzzer likes (a dictonary)
 '''
 def getDictFromInput(inputFileName: str):
     fileType, pparsed = classifyFile(inputFileName)
+    print(fileType)
     return parsers[fileType](pparsed)
 
 '''
 convert back the dictionary from the fuzzer to valid input
 '''
-def getInputFromDict(dic):
+def getInputFromDict(dic: dict) -> str:
     output = ""
     if dic['file'] == FileType.JSON:
         output = reconstructJson(dic)
