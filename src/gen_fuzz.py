@@ -12,6 +12,8 @@ formatcases = ["%n"*10, "%s"*10, "%1000000$x"]
 # "%x"*1000
 # based on speed so far I estimate it will take more than one hour to run completely on csv
 
+# We should have a function that makes strings of ever increasing length for overflow test
+
 # global binary
 
 # return inputWords dict that causes crash, or None if no crash
@@ -55,11 +57,9 @@ def send(words: dict) -> bool:
 
     return None
 
-def generalFuzz(_binary: str, inputWords: dict):
+def generalFuzz(_binary: str, inputWords: dict) -> str:
     global binary 
     binary = _binary
     print(inputWords)
     crashInput = permutations(inputWords.copy(), 0)
-    if crashInput is not None:
-        print('yahooooo')
-        print(crashInput)
+    return crashInput
