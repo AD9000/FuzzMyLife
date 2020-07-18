@@ -22,9 +22,8 @@ if __name__ == "__main__":
     if crashInput is not None:
         print("Found crash")
         print(crashInput)
-        f = open("bad.txt", "w")
-        f.write(crashInput)
-        f.close()
+        with open("bad.txt", "w") as f:
+            f.write(crashInput)
     else:
         print(":'(")
-        print("How did this even finish running")
+        
