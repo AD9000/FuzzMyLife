@@ -21,12 +21,13 @@ def addLines(inputWords: dict) -> str:
         print(res)
         return res
     else:
-        # state = copy.deepcopy(inputWords)
-        # res = addCpl(state)
-        # if res is not None:
-        #     return res
-        # else:
-        addLines(inputWords)
+        state = copy.deepcopy(inputWords)
+        res = addCpl(state)
+        if res is not None:
+            return res
+        return addLines(inputWords)
+        
+    
 
 def addCpl(inputWords: dict) -> dict:
     values = inputWords['values']
@@ -42,14 +43,14 @@ def addCpl(inputWords: dict) -> dict:
 # return True on segfault
 def send(words: dict) -> str:
     print("\n\n\n\n=============================================")
-    input = parse.getInputFromDict(words)
+    inputString = parse.getInputFromDict(words)
 
     p = Popen(binary, stdin=PIPE)
-    p.communicate(input.encode())
+    p.communicate(inputString.encode())
 
     if p.returncode != 0:
         print(p.returncode)
-        return input
+        return inputString
     return None
 
 def lineFuzz(_binary: str, inputWords: dict) -> str:
@@ -58,5 +59,4 @@ def lineFuzz(_binary: str, inputWords: dict) -> str:
     if (inputWords['file'] != parse.FileType.CSV):
         return None
     crashInput = addLines(inputWords)
-    print("crash input is: " + str(crashInput))
     return crashInput

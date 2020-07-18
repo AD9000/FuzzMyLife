@@ -58,13 +58,13 @@ def fast_fuzz(inputWords: dict) -> dict:
 # return True on segfault
 def send(words: dict) -> bool:
     print("\n\n\n\n=============================================")
-    input = parse.getInputFromDict(words)
+    inputString = parse.getInputFromDict(words)
 
-    p = subprocess.Popen(binary, stdin=PIPE)
-    p.communicate(input.encode())
+    p = Popen(binary, stdin=PIPE)
+    p.communicate(inputString.encode())
 
     if p.returncode != 0:
-        return input
+        return inputString
 
     return None
 
