@@ -6,39 +6,40 @@ import copy
 # hardcode these in a wordlists file
 # research how to actually make a good fuzzer.
 intcases = [-1, 0, 1, 10*(2**20), -10*(2**20)]
-stringcases = ["A"*1000, "\'", "\"", "\\", "#", "%", "--", " ", "\n", "`", ",", ".", "/", ""]
-# "A"*1000, "A"*(2**30)
-formatcases = ["%n"*10, "%s"*10, "%1000000$x"]
-# "%x"*1000
-# based on speed so far I estimate it will take more than one hour to run completely on csv
+stringcases = ["A"*10, "A"*100, "A"*1000, "\'", "\"", "\\", "#", "%", "--", " ", "\n", "`", ",", ".", "/", ""]
+formatcases = ["%n"*10, "%n"*100, "%1000000$x"]
 
 # We should have a function that makes strings of ever increasing length for overflow test
 
 # global binary
 
 # return inputWords dict that causes crash, or None if no crash
-def permutations(inputWords: dict, i: int) -> dict:
-    if i == len(inputWords['values']):
-        return send(inputWords)
-    else:
-        testcases = [inputWords['values'][i]] # original value
-        if isinstance(inputWords['values'][i], int):
-            testcases += intcases
-        elif isinstance(inputWords['values'][i], str):
-            testcases += stringcases + formatcases
-        else:
-            raise()
-        # float
-        # other types?
+# based on speed so far I estimate it will take more than one hour to run completely on csv
+# options^fields ie completely prohibitive
+# def permutations(inputWords: dict, i: int) -> dict:
+#     if i == len(inputWords['values']):
+#         return send(inputWords)
+#     else:
+#         testcases = [inputWords['values'][i]] # original value
+#         if isinstance(inputWords['values'][i], int):
+#             testcases += intcases
+#         elif isinstance(inputWords['values'][i], str):
+#             testcases += stringcases + formatcases
+#         else:
+#             raise()
+#         # float
+#         # other types?
 
-        for case in testcases:
-            inputWords['values'][i] = case
-            res = permutations(inputWords, i+1)
-            if res is not None:
-                return res
-        return None
+#         for case in testcases:
+#             inputWords['values'][i] = case
+#             res = permutations(inputWords, i+1)
+#             if res is not None:
+#                 return res
+#         return None
 
-def fast_fuzz(inputWords: dict) -> dict:
+# did you mean fastFuzz
+# you demon
+def fast_fuzz(inputWords: dict) -> str:
     for i in range(len(inputWords['values'])):
         testcases = [inputWords['values'][i]]
         if isinstance(inputWords['values'][i], int):
@@ -55,8 +56,8 @@ def fast_fuzz(inputWords: dict) -> dict:
             if res is not None:
                 return res
 
-# return True on segfault
-def send(words: dict) -> bool:
+# return crashinput on segfault, else None
+def send(words: dict) -> str:
     print("\n\n\n\n=============================================")
     inputString = parse.getInputFromDict(words)
 

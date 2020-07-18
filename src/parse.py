@@ -60,7 +60,7 @@ def classifyFile(inputFileName: str) -> list:
     return [FileType.NONE, "Could not open file"]
 
 
-def parseCsv(pParsed):
+def parseCsv(pParsed) -> dict:
     parsed = []
     cpl = 0
     for line in pParsed:
@@ -81,7 +81,7 @@ def reconstructCsv(fuzzed: dict) -> str:
     return csv
 
 
-def parseJson(pParsed):
+def parseJson(pParsed)-> dict:
     print(pParsed)
     global jsonTemplate
     global values
@@ -92,7 +92,7 @@ def parseJson(pParsed):
     recJson(pParsed)
     return { 'values': values, 'template': jsonTemplate, 'file': FileType.JSON }
 
-def recJson(obj):
+def recJson(obj) -> None:
     global jsonTemplate
     global count
     global values
@@ -117,7 +117,7 @@ def reconstructJson(fuzzed: dict) -> str:
     repJson(obj, values)
     return json.dumps(obj)
 
-def repJson(obj, values):
+def repJson(obj, values) -> None:
     for key in obj.keys():
         if isinstance(obj[key], list):
             replist = []
@@ -130,7 +130,7 @@ def repJson(obj, values):
             obj[key] = values[obj[key]]
 
 
-def parsePlaintext(pParsed):
+def parsePlaintext(pParsed) -> dict:
     return { 'values': pParsed.split('\n')[:-1], 'file': FileType.PLAINTEXT }
 
 def reconstructPlaintext(fuzzed: dict) -> str:
@@ -143,7 +143,7 @@ def reconstructPlaintext(fuzzed: dict) -> str:
     return pt
 
 
-def parseXml(pParsed):
+def parseXml(pParsed) -> dict:
     global xmlTemplate
     global count
     global values
@@ -154,7 +154,7 @@ def parseXml(pParsed):
     count = 0
     return {'values': values, 'template': xmlTemplate, 'file': FileType.XML }
 
-def recXml(root):
+def recXml(root) -> None:
     global count
     global values
     for child in root:
@@ -178,7 +178,7 @@ def reconstructXml(fuzzed: dict) -> str:
     repXml(root, values)
     return ET.tostring(root).decode()
     
-def repXml(root, values):
+def repXml(root, values) -> None:
     for child in root:
         if len(child.attrib) > 0:
             replace = {}
@@ -193,9 +193,9 @@ def repXml(root, values):
 parsers = {FileType.NONE: lambda: {'values': []}, FileType.JSON: parseJson, FileType.XML: parseXml, FileType.CSV: parseCsv, FileType.PLAINTEXT: parsePlaintext}
 
 '''
-convert the input file to something the fuzzer likes (a dictonary)
+convert the input file to something the fuzzer likes (a dictionary)
 '''
-def getDictFromInput(inputFileName: str):
+def getDictFromInput(inputFileName: str) -> dict:
     fileType, pparsed = classifyFile(inputFileName)
     print(fileType)
     return parsers[fileType](pparsed)
