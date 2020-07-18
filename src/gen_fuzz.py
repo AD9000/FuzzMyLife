@@ -1,11 +1,13 @@
 import parse
 from pwn import *
+from subprocess import *
+import json
 
 # hardcode these in a wordlists file
 # research how to actually make a good fuzzer.
 intcases = [-1, 0, 1, 10*(2**20), -10*(2**20)]
-stringcases = ["A"*(2**10), "\'", "\"", "\\", "#", "%", "--", " ", "\n", "`", ",", ".", "/"]
-formatcases = ["%x"*10000, "%n"*10000, "%s"*10000, "%p"*10000, "%1000000$x"]
+stringcases = ["A"*(2**2), "\'", "\"", "\\", "#", "%", "--", " ", "\n", "`", ",", ".", "/"]
+formatcases = ["%x"*10, "%n"*10, "%s"*10, "%p"*10, "%1000000$x"]
 # more As
 
 # global binary
@@ -25,6 +27,8 @@ def permutations(inputWords: dict, i: int) -> dict:
             raise()
         # float
         # other types?
+        testcases.append(inputWords['values'][i])
+
         for case in testcases:
             inputWords['values'][i] = case
             res = permutations(inputWords, i+1)
@@ -35,17 +39,30 @@ def permutations(inputWords: dict, i: int) -> dict:
 # return True on segfault
 def send(words: dict) -> bool:
     print("\n\n\n\n=============================================")
-    print(words)
-    print("\n\n\n\n=============================================")
+    # print(words)
+    # print("\n\n\n\n=============================================")
     input = parse.getInputFromDict(words)
-    print("INPUT\n\n", input)
-    p = process(binary)
-    p.send(str(input))
-    p.send(b"\x04") # EOT
-    # wait until program is finished somehow
-    exitCode = p.poll() # doesn't block
-    if exitCode == 139: # segfault code, shouldn't hard code
+    # print("INPUT\n\n", input)
+
+
+    # p = process(binary)
+    # p.send(str(input))
+    # p.send(b"\x04") # EOT
+    # # wait until program is finished somehow
+    # exitCode = p.poll() # doesn't block
+    # if exitCode == 139: # segfault code, shouldn't hard code
+    #     return True
+
+    print(input)
+    p = subprocess.Popen(binary, stdin=PIPE)
+    outs, errs = p.communicate(input.encode())
+    print(outs)
+    print(errs)
+
+    if p.returncode != 0:
+        print(p.returncode)
         return True
+
     return False
 
 def generalFuzz(_binary: str, inputWords: dict):
@@ -55,4 +72,4 @@ def generalFuzz(_binary: str, inputWords: dict):
     crashInput = permutations(inputWords.copy(), 0)
     if crashInput is not None:
         print('yahooooo')
-        print(crashInput)
+        print(parse.getInputFromDict(crashInput))
