@@ -2,6 +2,7 @@ import sys
 
 import parse
 import gen_fuzz
+import line_fuzz
 
 # The only real requirement is that you supply an executable file that takes in a single argument (the binary to fuzz),
 # your executable should create a file called bad.txt which if passed into the binary as input causes the program to crash.
