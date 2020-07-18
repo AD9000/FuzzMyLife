@@ -20,8 +20,6 @@ if __name__ == "__main__":
     inputDict = parse.getDictFromInput(inputFileName)
     # fuzz
     crashInput = line_fuzz.lineFuzz(binary, inputDict)
-    print("===================end=========")
-    print(crashInput)
     if crashInput is not None:
         print("Found crash")
         print(crashInput)
