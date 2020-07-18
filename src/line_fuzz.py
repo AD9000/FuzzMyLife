@@ -41,19 +41,6 @@ def addCpl(inputWords: dict) -> dict:
                 return res
     return None
 
-# return True on segfault
-def send(words: dict) -> str:
-    print("\n\n\n\n=============================================")
-    inputString = parse.getInputFromDict(words)
-
-    p = Popen(binary, stdin=PIPE)
-    p.communicate(inputString.encode())
-
-    if p.returncode != 0:
-        print(p.returncode)
-        return inputString
-    return None
-
 def lineFuzz(_binary: str, inputWords: dict) -> str:
     gen_fuzz.binary = _binary
     if (inputWords['file'] != parse.FileType.CSV):
