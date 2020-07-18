@@ -2,12 +2,12 @@ import parse
 from subprocess import *
 import copy
 
-limit_check = 0
+limit_checkr = 0
 
 def addLines(inputWords: dict) -> dict:
-    global limit_check
-    limit_check += 1
-    if (limit_check > 50):
+    global limit_checkr
+    limit_checkr += 1
+    if (limit_checkr > 50):
         return None
     
     values = copy.deepcopy(inputWords['values'])
@@ -19,8 +19,23 @@ def addLines(inputWords: dict) -> dict:
     if res is not None:
         return res
     else:
-        addLines(inputWords)
+        state = copy.deepcopy(inputWords)
+        res = addCpl(inputWords)
+        if res is not None:
+            return res
+        else:
+            addLines(state)
 
+def addCpl(inputWords: dict) -> dict:
+    values = inputWords['values']
+    for i in range(1, len(values)):
+        if len(values) % i == 0:
+            inputWords['cpl'] = i
+            print(inputWords)
+            res = send(inputWords)
+            if res is not None:
+                return res
+    return None
 
 # return True on segfault
 def send(words: dict) -> bool:

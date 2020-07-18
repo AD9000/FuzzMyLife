@@ -19,6 +19,7 @@ if __name__ == "__main__":
     # parse
     inputDict = parse.getDictFromInput(inputFileName)
     # fuzz
+    line_fuzz.lineFuzz(binary, inputDict)
     crashInput = gen_fuzz.generalFuzz(binary, inputDict)
     if crashInput is not None:
         print("Found crash")
