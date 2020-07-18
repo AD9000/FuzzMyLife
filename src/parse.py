@@ -137,9 +137,9 @@ def reconstructPlaintext(fuzzed: dict) -> str:
     pt = ""
     for i in range(0, len(fuzzed['values'])):
         if i == (len(fuzzed['values']) - 1):
-            pt += fuzzed['values'][i]
+            pt += str(fuzzed['values'][i])
         else:
-            pt += fuzzed['values'][i] + "\n"
+            pt += str(fuzzed['values'][i]) + "\n"
     return pt
 
 

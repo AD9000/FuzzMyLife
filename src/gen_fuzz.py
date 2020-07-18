@@ -41,13 +41,13 @@ formatcases = ["%n"*10, "%n"*100, "%1000000$x"]
 # you demon
 def fast_fuzz(inputWords: dict) -> str:
     for i in range(len(inputWords['values'])):
-        testcases = [inputWords['values'][i]]
-        if isinstance(inputWords['values'][i], int):
-            testcases += intcases
-        elif isinstance(inputWords['values'][i], str):
-            testcases += stringcases + formatcases
-        else:
-            raise()
+        testcases = [inputWords['values'][i]] + intcases + stringcases + formatcases
+        # if isinstance(inputWords['values'][i], int):
+        #     testcases += intcases
+        # elif isinstance(inputWords['values'][i], str):
+        #     testcases += stringcases + formatcases
+        # else:
+        #     raise()
 
         for case in testcases:
             payload = copy.deepcopy(inputWords)
