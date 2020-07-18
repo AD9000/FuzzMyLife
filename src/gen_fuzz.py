@@ -2,11 +2,12 @@ import parse
 from pwn import *
 from subprocess import *
 import json
+import copy
 
 # hardcode these in a wordlists file
 # research how to actually make a good fuzzer.
 intcases = [-1, 0, 1, 10*(2**20), -10*(2**20)]
-stringcases = ["A"*100, "\'", "\"", "\\", "#", "%", "--", " ", "\n", "`", ",", ".", "/", ""]
+stringcases = ["A"*1000, "\'", "\"", "\\", "#", "%", "--", " ", "\n", "`", ",", ".", "/", ""]
 # "A"*1000, "A"*(2**30)
 formatcases = ["%n"*10, "%s"*10, "%1000000$x"]
 # "%x"*1000
@@ -38,21 +39,32 @@ def permutations(inputWords: dict, i: int) -> dict:
                 return res
         return None
 
+def fast_fuzz(inputWords: dict) -> dict:
+    for i in range(len(inputWords['values'])):
+        testcases = [inputWords['values'][i]]
+        if isinstance(inputWords['values'][i], int):
+            testcases += intcases
+        elif isinstance(inputWords['values'][i], str):
+            testcases += stringcases + formatcases
+        else:
+            raise()
+
+        for case in testcases:
+            payload = copy.deepcopy(inputWords)
+            payload['values'][i] = case
+            res = send(payload)
+            if res is not None:
+                return res
+
 # return True on segfault
 def send(words: dict) -> bool:
     print("\n\n\n\n=============================================")
-    # print(words)
-    # print("\n\n\n\n=============================================")
     input = parse.getInputFromDict(words)
 
-    print(input)
     p = subprocess.Popen(binary, stdin=PIPE)
-    outs, errs = p.communicate(input.encode())
-    print(outs)
-    print(errs)
+    p.communicate(input.encode())
 
-    if p.returncode != 0: # 139 for segfault
-        print(p.returncode)
+    if p.returncode != 0:
         return input
 
     return None
@@ -60,6 +72,6 @@ def send(words: dict) -> bool:
 def generalFuzz(_binary: str, inputWords: dict) -> str:
     global binary 
     binary = _binary
-    print(inputWords)
-    crashInput = permutations(inputWords.copy(), 0)
+    # crashInput = permutations(inputWords.copy(), 0)
+    crashInput = fast_fuzz(inputWords.copy())
     return crashInput
