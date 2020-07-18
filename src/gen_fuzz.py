@@ -8,7 +8,7 @@ import json
 intcases = [-1, 0, 1, 10*(2**20), -10*(2**20)]
 stringcases = ["A"*100, "\'", "\"", "\\", "#", "%", "--", " ", "\n", "`", ",", ".", "/", ""]
 # "A"*1000, "A"*(2**30)
-formatcases = ["%x"*10, "%n"*10, "%s"*10, "%p"*10, "%1000000$x"]
+formatcases = ["%n"*10, "%s"*10, "%1000000$x"]
 # "%x"*1000
 # based on speed so far I estimate it will take more than one hour to run completely on csv
 
