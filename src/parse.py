@@ -5,6 +5,8 @@ import csv
 import sys
 import copy
 
+from log import *
+
 class FileType(Enum):
     PLAINTEXT = auto()
     CSV = auto()
@@ -27,28 +29,25 @@ def classifyFile(inputFileName: str) -> list:
             loaded = json.load(fp)
             return [FileType.JSON, loaded]
         except:
-            pass
-            print('not json')
+            logger.debug('not json')
 
         fp.seek(0)
         try:
             tree = ET.parse(inputFileName)
             return [FileType.XML, tree]
         except:
-            pass
-            # print('not xml')
+            logger.debug('not xml')
 
         fp.seek(0)
         lastc = len(fp.readline().split(','))
         if (lastc == 1):
-            pass
-            # print('not csv')
+            logger.debug('not csv')
         else:
             isCsv = True
             for i in fp.readlines():
                 if (len(i.split(',')) != lastc):    
                     isCsv = False
-                    # print('not csv')
+                    logger.debug('not csv')
                     break
             if isCsv:
                 fp.seek(0)
@@ -82,7 +81,7 @@ def reconstructCsv(fuzzed: dict) -> str:
 
 
 def parseJson(pParsed)-> dict:
-    print(pParsed)
+    logger.debug(pParsed)
     global jsonTemplate
     global values
     global count
@@ -182,7 +181,6 @@ def reconstructXml(fuzzed: dict) -> str:
     return ET.tostring(root).decode()
     
 def repXml(root, values) -> None:
-    print(values)
     for child in root:
         if len(child.attrib) > 0:
             replace = {}
@@ -191,7 +189,6 @@ def repXml(root, values) -> None:
             child.attrib = replace
         if child.text is not None and "\n      " not in child.text:
             child.text = values[int(child.text)]
-            print(child.text)
         repXml(child, values)
 
 
@@ -202,7 +199,7 @@ convert the input file to something the fuzzer likes (a dictionary)
 '''
 def getDictFromInput(inputFileName: str) -> dict:
     fileType, pparsed = classifyFile(inputFileName)
-    print(fileType)
+    logger.debug(fileType)
     return parsers[fileType](pparsed)
 
 '''
@@ -219,7 +216,7 @@ def getInputFromDict(dic: dict) -> str:
     elif dic['file'] == FileType.XML:
         output = reconstructXml(dic)
     else:
-        print("Error, invalid file type")
+        logger.info("Error, invalid file type")
         exit()
     
     return output

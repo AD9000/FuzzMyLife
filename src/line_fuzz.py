@@ -2,6 +2,7 @@ import parse
 from subprocess import *
 import copy
 import gen_fuzz
+from log import *
 
 limit_checkr = 0
 
@@ -17,9 +18,9 @@ def addLines(inputWords: dict) -> str:
     inputWords['values'] = values
     res = gen_fuzz.fast_fuzz(inputWords)
     if res is not None:
-        print("RESFDSAGDSFADS")
-        print("====================")
-        print(res)
+        logger.debug("RESFDSAGDSFADS")
+        logger.debug("====================")
+        logger.debug(res)
         return res
     else:
         state = copy.deepcopy(inputWords)
@@ -35,7 +36,7 @@ def addCpl(inputWords: dict) -> dict:
     for i in range(1, len(values)):
         if len(values) % i == 0:
             inputWords['cpl'] = i - 1
-            print(inputWords)
+            logger.debug(inputWords)
             res = gen_fuzz.fast_fuzz(inputWords)
             if res is not None:
                 return res

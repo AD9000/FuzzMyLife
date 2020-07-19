@@ -1,40 +1,57 @@
 #!/usr/bin/python3
 import sys
+import os
 
 import parse
 import gen_fuzz
 import line_fuzz
+from log import *
 
 # The only real requirement is that you supply an executable file that takes in a single argument (the binary to fuzz),
-# your executable should create a file called bad.txt which if passed into the binary as input causes the program to crash.
+# Creates a file called bad.txt which if passed into the binary as input causes the program to crash.
+
+def handleCrash(crashInput):
+    if crashInput is not None:
+        logger.info("Found crash")
+        logger.info(crashInput)
+        with open(ROOT_DIR + "bad.txt", "w") as badtxt:
+            badtxt.write(crashInput)
+        logger.info('\n\nBad input written to ' + os.path.join(ROOT_DIR, 'bad.txt'))
+        return True
+    return False
+
+def exitSafely(code=0):
+    logger.info('Done')
+    exit(0)
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print(f"Usage: {sys.argv[0]} binaryfilename inputfilename")
+        logger.info(f"Usage: {sys.argv[0]} binaryfilename inputfilename")
         exit()
     binary = sys.argv[1]
     inputFileName = sys.argv[2]
-    print(binary)
-    print(inputFileName)
+    logger.debug(binary)
+    logger.debug(inputFileName)
+    logger.info('Starting fuzzer...')
 
     # parse
     inputDict = parse.getDictFromInput(inputFileName)
+
+    logger.debug('starting line fuzzer...')
     # fuzz
     crashInput = line_fuzz.lineFuzz(binary, inputDict)
-    if crashInput is not None:
-        print("Found crash")
-        print(crashInput)
-        f = open("bad.txt", "w")
-        f.write(crashInput)
-        f.close()
-        exit()
+    logger.debug('finished running line fuzzer')
+    if handleCrash(crashInput):
+        exitSafely()
 
+    logger.debug('starting general fuzzer...')
     crashInput = gen_fuzz.generalFuzz(binary, inputDict)
-    if crashInput is not None:
-        print("Found crash")
-        print(crashInput)
-        with open("bad.txt", "w") as f:
-            f.write(crashInput)
+    logger.debug('finished running general fuzzer')
+    if handleCrash(crashInput):
+        exitSafely()
     else:
-        print(":'(")
+        logger.info(":'(")
+
+    logger.info('done')
+
         

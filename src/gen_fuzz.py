@@ -3,6 +3,8 @@ from subprocess import *
 import json
 import copy
 
+from log import *
+
 # hardcode these in a wordlists file
 # research how to actually make a good fuzzer.
 intcases = [-1, 0, 1, 10*(2**20), -10*(2**20)]
@@ -58,11 +60,14 @@ def fast_fuzz(inputWords: dict) -> str:
 
 # return crashinput on segfault, else None
 def send(words: dict) -> str:
-    print("\n\n\n\n=============================================")
+    logger.debug("(separator below)\n\n\n\n=============================================")
     inputString = parse.getInputFromDict(words)
 
-    p = Popen(binary, stdin=PIPE)
-    p.communicate(inputString.encode())
+    p = Popen(binary, stdin=PIPE, stdout=PIPE)
+    output, error = p.communicate(inputString.encode())
+    logger.debug(output.decode())
+    if (error):
+        logger.error(error)
 
     if p.returncode != 0:
         return inputString
