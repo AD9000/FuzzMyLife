@@ -35,7 +35,7 @@ def send(words: dict) -> str:
     if (error):
         logger.error(error)
 
-    if p.returncode != 0:
+    if p.returncode == -11: # segfault code
         return inputString
 
     return None
