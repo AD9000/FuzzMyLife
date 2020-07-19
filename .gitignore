@@ -1,4 +1,5 @@
 __pycache__/
 .history/
-src/bad.txt
+logs/
+bad.txt
 .vscode/
