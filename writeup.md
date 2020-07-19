@@ -25,7 +25,7 @@ For CSV, this means varying the number of fields per line, and the number of lin
 ---
 - basic format string
 - basic buffer overflow
-- the bug that csv1 has
+- bugs caused due to larger amounts of input than a user would normally enter
 ## Next steps
 ---
 - Mutate more than field at a time. A likely use case may be when the path to an overflow requires a large number provided as a length and a long string provided as the input.

@@ -18,7 +18,7 @@ class FileType(Enum):
 count = 0
 xmlTemplate = None
 jsonTemplate = {}
-#Values can probably be removed but for now it used for debugging
+# Values can probably be removed but for now it used for debugging
 values = []
 '''
 gives file extension: txt, json => FileType
@@ -58,7 +58,10 @@ def classifyFile(inputFileName: str) -> list:
 
     return [FileType.NONE, "Could not open file"]
 
-
+'''
+Parses the csv file to generate input dict for the fuzzer
+@param: pParsed: Partially parsed input from classifyFile()
+'''
 def parseCsv(pParsed) -> dict:
     parsed = []
     cpl = 0
@@ -67,6 +70,11 @@ def parseCsv(pParsed) -> dict:
         cpl = len(line.split(',')) - 1
     return { 'values': parsed, 'cpl': cpl, 'file': FileType.CSV }
 
+
+'''
+Reconstructs valid csv input to pass into the binary
+@param: fuzzed: Mutated input from the fuzzer
+'''
 def reconstructCsv(fuzzed: dict) -> str:
     csv = ""
     count = 0
@@ -80,17 +88,10 @@ def reconstructCsv(fuzzed: dict) -> str:
     return csv
 
 
-def parseJson(pParsed)-> dict:
-    logger.debug(pParsed)
-    global jsonTemplate
-    global values
-    global count
-    count = 0
-    values = []
-    jsonTemplate = {}
-    recJson(pParsed)
-    return { 'values': values, 'template': jsonTemplate, 'file': FileType.JSON }
-
+'''
+Recursively parse json and generate template to be used for reconstruction 
+@param: obj: valid json to be parsed
+'''
 def recJson(obj) -> None:
     global jsonTemplate
     global count
@@ -109,13 +110,27 @@ def recJson(obj) -> None:
             count = count + 1
             values.append(obj[key])
 
-# fuzzed is the dict
-def reconstructJson(fuzzed: dict) -> str:
-    obj = copy.deepcopy(fuzzed['template'])
-    values = fuzzed['values']
-    repJson(obj, values)
-    return json.dumps(obj)
+'''
+Parses the json file to generate input dict for the fuzzer
+@param: pParsed: Partially parsed input from classifyFile()
+'''
+def parseJson(pParsed)-> dict:
+    logger.debug(pParsed)
+    global jsonTemplate
+    global values
+    global count
+    count = 0
+    values = []
+    jsonTemplate = {}
+    recJson(pParsed)
+    return { 'values': values, 'template': jsonTemplate, 'file': FileType.JSON }
 
+
+'''
+Recursively replace template with values to create valid json input 
+@param: obj: template to be used
+@param: values: values dict to be inserted
+'''
 def repJson(obj, values) -> None:
     for key in obj.keys():
         if isinstance(obj[key], list):
@@ -128,10 +143,29 @@ def repJson(obj, values) -> None:
         else:
             obj[key] = values[obj[key]]
 
+'''
+Reconstructs valid json input to pass into the binary
+@param: fuzzed: Mutated input from the fuzzer
+'''
+def reconstructJson(fuzzed: dict) -> str:
+    obj = copy.deepcopy(fuzzed['template'])
+    values = fuzzed['values']
+    repJson(obj, values)
+    return json.dumps(obj)
 
+
+'''
+Parses the plaintext file to generate input dict for the fuzzer
+@param: pParsed: Partially parsed input from classifyFile()
+'''
 def parsePlaintext(pParsed) -> dict:
     return { 'values': pParsed.split('\n')[:-1], 'file': FileType.PLAINTEXT }
 
+
+'''
+Reconstructs valid plaintext input to pass into the binary
+@param: fuzzed: Mutated input from the fuzzer
+'''
 def reconstructPlaintext(fuzzed: dict) -> str:
     pt = ""
     for i in range(0, len(fuzzed['values'])):
@@ -141,18 +175,10 @@ def reconstructPlaintext(fuzzed: dict) -> str:
             pt += str(fuzzed['values'][i]) + "\n"
     return pt
 
-
-def parseXml(pParsed) -> dict:
-    global xmlTemplate
-    global count
-    global values
-    values = []
-    root = pParsed.getroot()
-    recXml(root)
-    xmlTemplate = root
-    count = 0
-    return {'values': values, 'template': xmlTemplate, 'file': FileType.XML }
-
+'''
+Recursively parse xml and generate template to be used for reconstruction 
+@param: root: Root node of the XML elementTree
+'''
 def recXml(root) -> None:
     global count
     global values
@@ -171,15 +197,27 @@ def recXml(root) -> None:
             count = count + 1
         recXml(child)
 
-def reconstructXml(fuzzed: dict) -> str:
-    root = copy.deepcopy(fuzzed['template'])
-    values = fuzzed['values']
-    for i in range(0, len(values)):
-        if isinstance(values[i], int):
-            values[i] = str(values[i])
-    repXml(root, values)
-    return ET.tostring(root).decode()
-    
+'''
+Parses the xml file to generate input dict for the fuzzer
+@param: pParsed: Partially parsed input from classifyFile()
+'''
+def parseXml(pParsed) -> dict:
+    global xmlTemplate
+    global count
+    global values
+    values = []
+    root = pParsed.getroot()
+    recXml(root)
+    xmlTemplate = root
+    count = 0
+    return {'values': values, 'template': xmlTemplate, 'file': FileType.XML }
+
+
+'''
+Recursively replace template with values to create valid xml input
+@param: root: Root node of the xml element tree template
+@param: values: Values array to be inserted into the template
+'''
 def repXml(root, values) -> None:
     for child in root:
         if len(child.attrib) > 0:
@@ -191,7 +229,23 @@ def repXml(root, values) -> None:
             child.text = values[int(child.text)]
         repXml(child, values)
 
+'''
+Reconstructs valid xml input to pass into the binary
+@param: fuzzed: Mutated input from the fuzzer
+'''
+def reconstructXml(fuzzed: dict) -> str:
+    root = copy.deepcopy(fuzzed['template'])
+    values = fuzzed['values']
+    for i in range(0, len(values)):
+        if isinstance(values[i], int):
+            values[i] = str(values[i])
+    repXml(root, values)
+    return ET.tostring(root).decode()
 
+
+'''
+Valid parsers currently supported by the parser
+'''
 parsers = {FileType.NONE: lambda: {'values': []}, FileType.JSON: parseJson, FileType.XML: parseXml, FileType.CSV: parseCsv, FileType.PLAINTEXT: parsePlaintext}
 
 '''
