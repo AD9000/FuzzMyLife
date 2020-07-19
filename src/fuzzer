@@ -14,7 +14,7 @@ def handleCrash(crashInput):
     if crashInput is not None:
         logger.info("Found crash")
         logger.info(crashInput)
-        with open(ROOT_DIR + "bad.txt", "w") as badtxt:
+        with open(os.path.join(ROOT_DIR, "bad.txt"), "w") as badtxt:
             badtxt.write(crashInput)
         logger.info('\n\nBad input written to ' + os.path.join(ROOT_DIR, 'bad.txt'))
         return True

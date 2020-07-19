@@ -4,7 +4,10 @@ import os
 from pathlib import Path
 
 # Paths to different directories
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Temporarily use the src/ folder
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_DIR = os.path.join(ROOT_DIR, 'logs')
 LOG_PATH = os.path.join(LOG_DIR, 'log.txt')
 
