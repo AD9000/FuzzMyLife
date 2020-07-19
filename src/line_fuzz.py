@@ -4,12 +4,8 @@ import copy
 import gen_fuzz
 from log import *
 
-limit_checkr = 0
-
-def addLines(inputWords: dict) -> str:
-    global limit_checkr
-    limit_checkr += 1
-    if (limit_checkr > 8):
+def addLines(inputWords: dict, j: int = 0) -> str:
+    if (j > 8):
         return None
     
     values = copy.deepcopy(inputWords['values'])
@@ -27,8 +23,7 @@ def addLines(inputWords: dict) -> str:
         res = addCpl(state)
         if res is not None:
             return res
-        return addLines(inputWords)
-        
+        return addLines(inputWords, j+1)
     
 
 def addCpl(inputWords: dict) -> dict:

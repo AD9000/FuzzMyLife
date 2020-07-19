@@ -9,12 +9,13 @@ from log import *
 intcases = [-1, 0, 1, 10*(2**20), -10*(2**20)]
 stringcases = ["A"*10, "A"*100, "A"*1000, "\'", "\"", "\\", "#", "%", "--", " ", "\n", "`", ",", ".", "/", ""]
 formatcases = ["%n"*10, "%n"*100, "%1000000$x"]
+allcases = intcases + stringcases + formatcases
 
 # did you mean fastFuzz
 # you demon
 def fast_fuzz(inputWords: dict) -> str:
     for i in range(len(inputWords['values'])):
-        testcases = [inputWords['values'][i]] + intcases + stringcases + formatcases
+        testcases = [inputWords['values'][i]] + allcases
 
         for case in testcases:
             payload = copy.deepcopy(inputWords)
