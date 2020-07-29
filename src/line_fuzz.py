@@ -44,5 +44,5 @@ def lineFuzz(_binary: str, inputWords: dict) -> str:
     gen_fuzz.binary = _binary
     if (inputWords['file'] != parse.FileType.CSV):
         return None
-    crashInput = addLines(inputWords)
+    crashInput = addLines(copy.deepcopy(inputWords))
     return crashInput

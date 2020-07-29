@@ -42,5 +42,5 @@ def send(words: dict) -> str:
 def generalFuzz(_binary: str, inputWords: dict) -> str:
     global binary 
     binary = _binary
-    crashInput = fastFuzz(inputWords.copy())
+    crashInput = fastFuzz(copy.deepcopy(inputWords))
     return crashInput
