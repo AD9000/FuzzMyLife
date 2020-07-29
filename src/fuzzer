@@ -23,7 +23,7 @@ def handleCrash(crashInput):
 '''
 Cleanup, logging before exit
 '''
-def exitSafely(code=0):
+def exitSafely(code = 0):
     logger.info('Done')
     exit(0)
 
@@ -78,11 +78,10 @@ if __name__ == "__main__":
     # parse input into an array for the fuzzer
     inputDict = parse.getDictFromInput(inputFileName)
     
-    runLineFuzzer(binary, inputDict)
     runGeneralFuzzer(binary, inputDict)
+    runLineFuzzer(binary, inputDict)
     
     # all fuzzers failed
     logger.info(":'(")
     logger.info('done')
 
-        

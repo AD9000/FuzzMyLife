@@ -5,14 +5,17 @@ import gen_fuzz
 from log import *
 
 def addLines(inputWords: dict, j: int = 0) -> str:
-    if (j > 8):
+    if (j > 3):
         return None
     
+    logger.info("+++++++++++++++++++ j : {} +++++++++++++++".format(j))
     values = copy.deepcopy(inputWords['values'])
-    for i in inputWords['values']:
-        values.append(i)
-    inputWords['values'] = values
-    res = gen_fuzz.fast_fuzz(inputWords)
+    newVals = [*values, *values, *values]
+    logger.info(newVals)
+
+    inputWords['values'] = newVals
+
+    res = gen_fuzz.fastFuzz(inputWords)
     if res is not None:
         logger.debug("RESFDSAGDSFADS")
         logger.debug("====================")
@@ -32,7 +35,7 @@ def addCpl(inputWords: dict) -> dict:
         if len(values) % i == 0:
             inputWords['cpl'] = i - 1
             logger.debug(inputWords)
-            res = gen_fuzz.fast_fuzz(inputWords)
+            res = gen_fuzz.fastFuzz(inputWords)
             if res is not None:
                 return res
     return None
