@@ -5,6 +5,7 @@ import os
 import parse
 import gen_fuzz
 import line_fuzz
+import map
 from log import *
 
 '''
@@ -77,7 +78,8 @@ if __name__ == "__main__":
 
     # parse input into an array for the fuzzer
     inputDict = parse.getDictFromInput(inputFileName)
-    
+    map.mapper(binary, inputDict)
+    exit(0)
     runLineFuzzer(binary, inputDict)
     runGeneralFuzzer(binary, inputDict)
     
