@@ -73,15 +73,13 @@ if __name__ == "__main__":
     inputFileName = sys.argv[2]
 
     # logs for sanity
-    logger.debug(binary)
-    logger.debug(inputFileName)
     logger.info('Starting fuzzer...')
 
     # parse input into an array for the fuzzer
     inputDict = parse.getDictFromInput(inputFileName)
     
-    runLineFuzzer(binary, inputDict)
     runGeneralFuzzer(binary, inputDict)
+    runLineFuzzer(binary, inputDict)
     
     # all fuzzers failed
     logger.info(":'(")

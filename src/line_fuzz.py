@@ -31,7 +31,7 @@ def mutateCpl(inputWords: dict) -> dict:
     for i in range(1, len(values)):
         if len(values) % i == 0:
             inputWords['cpl'] = i - 1
-            res = threaded_fuzz.threadedFuzz(binary, inputWords)
+            res = threaded_fuzz.threadedFuzz(binary, inputWords, True)
             if res is not None:
                 return res
     return None

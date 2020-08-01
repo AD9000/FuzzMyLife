@@ -25,8 +25,6 @@ def createPayloads(inputWords: dict, sendBuffer: Queue):
             payload['values'][i] = case
             sendBuffer.put(payload)
             
-def fastPayloads_temp(inputWords: dict, sendBuffer: Queue):
-    sendBuffer.put(inputWords)
 '''
 Sends payloads from the sendBuffer to the binary
 If crash is detected, payload is stored in crashBuffer
@@ -50,7 +48,7 @@ def sendPayload(sendBuffer: Queue, crashBuffer: Queue):
 
 '''
 Producer-consumer implemenation of gen_fuzz
-#producers = 1, #consumers = #cores on the machine
+#producers = 1, #consumers = #cores on the machine - 1
 '''
 def threadedFuzz(_binary: str, inputWords: dict, fast_temp=False) -> str:
     # logger.info("starting threaded fuzz")
@@ -58,9 +56,17 @@ def threadedFuzz(_binary: str, inputWords: dict, fast_temp=False) -> str:
     binary = _binary
 
     # Match number of threads to number of logical cores
-    cores = multiprocessing.cpu_count()
+    cores = max(multiprocessing.cpu_count() - 1, 1)
     sendBuffer = Queue()
     crashBuffer = Queue()
+
+    # temp proof of concept measure for adding packets to queue
+    if fast_temp:
+        sendBuffer.put(copy.deepcopy(inputWords))
+        sendBuffer.put(None)
+        sendPayload(sendBuffer, crashBuffer)
+
+        return None if crashBuffer.empty() else crashBuffer.get()
 
     # Single producer
     producer = Thread(target=createPayloads, args=[inputWords, sendBuffer])
