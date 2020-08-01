@@ -25,7 +25,8 @@ def createPayloads(inputWords: dict, sendBuffer: Queue):
             payload['values'][i] = case
             sendBuffer.put(payload)
             
-
+def fastPayloads_temp(inputWords: dict, sendBuffer: Queue):
+    sendBuffer.put(inputWords)
 '''
 Sends payloads from the sendBuffer to the binary
 If crash is detected, payload is stored in crashBuffer
@@ -47,7 +48,12 @@ def sendPayload(sendBuffer: Queue, crashBuffer: Queue):
         if p.returncode == -11:
             crashBuffer.put(inputString)
 
-def threadedFuzz(_binary: str, inputWords: dict) -> str:
+'''
+Producer-consumer implemenation of gen_fuzz
+#producers = 1, #consumers = #cores on the machine
+'''
+def threadedFuzz(_binary: str, inputWords: dict, fast_temp=False) -> str:
+    # logger.info("starting threaded fuzz")
     global binary 
     binary = _binary
 
@@ -74,4 +80,5 @@ def threadedFuzz(_binary: str, inputWords: dict) -> str:
     for c in consumers:
         c.join()
 
+    # logger.info("finished threaded fuzz")
     return None if crashBuffer.empty() else crashBuffer.get()

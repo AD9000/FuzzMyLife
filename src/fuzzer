@@ -58,10 +58,8 @@ def runGeneralFuzzer(binary, inputDict):
 
     # running the general fuzzer, mutates input values
     # crashInput = gen_fuzz.generalFuzz(binary, inputDict)
-    logger.info("beginning threaded fuzz")
     crashInput = threaded_fuzz.threadedFuzz(binary, inputDict)
-    logger.info("finished threaded fuzz")
-    # logger.debug('finished running general fuzzer')
+    logger.debug('finished running threaded fuzzer')
 
     # Check if there was a crash
     if handleCrash(crashInput):
@@ -82,8 +80,8 @@ if __name__ == "__main__":
     # parse input into an array for the fuzzer
     inputDict = parse.getDictFromInput(inputFileName)
     
-    runGeneralFuzzer(binary, inputDict)
     runLineFuzzer(binary, inputDict)
+    runGeneralFuzzer(binary, inputDict)
     
     # all fuzzers failed
     logger.info(":'(")

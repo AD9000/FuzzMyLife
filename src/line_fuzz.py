@@ -11,7 +11,6 @@ def addLines(inputWords: dict, j: int = 0) -> str:
     
     logger.info("+++++++++++++++++++ j : {} +++++++++++++++".format(j))
     values = copy.deepcopy(inputWords['values'])
-
     inputWords['values'] = [*values, *values, *values]
 
     res = threaded_fuzz.threadedFuzz(binary, inputWords)
@@ -21,18 +20,17 @@ def addLines(inputWords: dict, j: int = 0) -> str:
         return res
     else:
         state = copy.deepcopy(inputWords)
-        res = addCpl(state)
+        res = mutateCpl(state)
         if res is not None:
             return res
         return addLines(inputWords, j+1)
     
 
-def addCpl(inputWords: dict) -> dict:
+def mutateCpl(inputWords: dict) -> dict:
     values = inputWords['values']
     for i in range(1, len(values)):
         if len(values) % i == 0:
             inputWords['cpl'] = i - 1
-            logger.debug(inputWords)
             res = threaded_fuzz.threadedFuzz(binary, inputWords)
             if res is not None:
                 return res
