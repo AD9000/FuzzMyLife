@@ -5,11 +5,16 @@ import copy
 
 from log import *
 
-# put these in a wordlists file
+# put into wordlist file?
 intcases = [-1, 0, 1, 10*(2**30), -10*(2**30)]
 stringcases = ["A"*10, "A"*100, "A"*1000, "\'", "\"", "\\", " ", "\n", "`", ",", "/", "", "\0"]
 formatcases = ["%n"*10, "%n"*100, "%1000000$x"]
-# allcases = intcases + stringcases + formatcases
+
+# specific cases for each file to try and break the format? or can parse do this instead?
+# xmlCases?
+# csvCases?
+# jsonCases?
+
 allcases = [*intcases, *stringcases, *formatcases]
 
 def fastFuzz(inputWords: dict) -> str:
@@ -17,15 +22,16 @@ def fastFuzz(inputWords: dict) -> str:
         testcases = [inputWords['values'][i]] + allcases
 
         for case in testcases:
+            logger.info("creating payload")
             payload = copy.deepcopy(inputWords)
             payload['values'][i] = case
+            logger.info("sending payload")
             res = send(payload)
             if res is not None:
                 return res
 
 # return crashinput on segfault, else None
 def send(words: dict) -> str:
-    logger.debug("(separator below)\n\n\n\n=============================================")
     inputString = parse.getInputFromDict(words)
 
     p = Popen(binary, stdin=PIPE, stdout=PIPE)

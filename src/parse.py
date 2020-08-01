@@ -66,8 +66,9 @@ def parseCsv(pParsed) -> dict:
     parsed = []
     cpl = 0
     for line in pParsed:
-        parsed += line.split(',')
-        cpl = len(line.split(',')) - 1
+        splitLine = line.split(',')
+        parsed += splitLine
+        cpl = len(splitLine) - 1
     return { 'values': parsed, 'cpl': cpl, 'file': FileType.CSV }
 
 
@@ -76,16 +77,16 @@ Reconstructs valid csv input to pass into the binary
 @param: fuzzed: Mutated input from the fuzzer
 '''
 def reconstructCsv(fuzzed: dict) -> str:
-    csv = ""
+    csv = []
     count = 0
     for i in fuzzed['values']:
         if count == fuzzed['cpl']:
             count = 0
-            csv += str(i) + "\n"
+            csv.extend([str(i), "\n"])
         else:
-            csv += str(i) + ","
+            csv.extend([str(i), ","])
             count += 1
-    return csv
+    return ''.join(csv)
 
 
 '''

@@ -3,8 +3,9 @@ import sys
 import os
 
 import parse
-import gen_fuzz
+# import gen_fuzz
 import line_fuzz
+import threaded_fuzz
 from log import *
 
 '''
@@ -56,8 +57,11 @@ def runGeneralFuzzer(binary, inputDict):
     logger.debug('starting general fuzzer...')
 
     # running the general fuzzer, mutates input values
-    crashInput = gen_fuzz.generalFuzz(binary, inputDict)
-    logger.debug('finished running general fuzzer')
+    # crashInput = gen_fuzz.generalFuzz(binary, inputDict)
+    logger.info("beginning threaded fuzz")
+    crashInput = threaded_fuzz.threadedFuzz(binary, inputDict)
+    logger.info("finished threaded fuzz")
+    # logger.debug('finished running general fuzzer')
 
     # Check if there was a crash
     if handleCrash(crashInput):
