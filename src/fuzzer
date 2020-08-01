@@ -3,14 +3,10 @@ import sys
 import os
 
 import parse
-# import gen_fuzz
 import line_fuzz
 import threaded_fuzz
 from log import *
 
-'''
-Show the input that crashed the program returned from the fuzzers
-'''
 def handleCrash(crashInput):
     if crashInput is not None:
         logger.info("Found crash")
@@ -21,24 +17,15 @@ def handleCrash(crashInput):
         return True
     return False
 
-'''
-Cleanup, logging before exit
-'''
 def exitSafely(code = 0):
     logger.info('Done')
     exit(0)
 
-'''
-Check that user has passed in args properly, otherwise print usage
-'''
 def checkArgs():
     if len(sys.argv) != 3:
         logger.info(f"Usage: {sys.argv[0]} binaryfilename inputfilename")
         exitSafely()
 
-'''
-Runs the line fuzzer from line_fuzz
-'''
 def runLineFuzzer(binary, inputDict):
     logger.debug('starting line fuzzer...')
     
@@ -50,9 +37,6 @@ def runLineFuzzer(binary, inputDict):
     if handleCrash(crashInput):
         exitSafely()
 
-'''
-Runs the general fuzzer from gen_fuzz
-'''
 def runGeneralFuzzer(binary, inputDict):
     logger.debug('starting general fuzzer...')
 
@@ -84,4 +68,3 @@ if __name__ == "__main__":
     # all fuzzers failed
     logger.info(":'(")
     logger.info('done')
-

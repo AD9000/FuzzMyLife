@@ -7,7 +7,7 @@ from subprocess import *
 from queue import Queue
 from log import *
 
-intcases = [-1, 0, 1, 10*(2**30), -10*(2**30)]
+intcases = [-1, 0, 1, 10*(2**20), -10*(2**20), 10*(2**30), -10*(2**30)]
 stringcases = ["A"*10, "A"*100, "A"*1000, "\'", "\"", "\\", " ", "\n", "`", ",", "/", "", "\0"]
 formatcases = ["%n"*10, "%n"*100, "%1000000$x"]
 
