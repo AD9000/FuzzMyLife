@@ -24,13 +24,12 @@ def testerThread(sendBuffer: Queue, crashBuffer: Queue):
         if (error):
             logger.debug(output)
             logger.error(error)
-
         if p.returncode == -11:
             crashBuffer.put(inputString)
 
 def initTesters() -> list:
     num_testers = max(1, multiprocessing.cpu_count()-1)
-    testers = [Thread(target=testerThread, args=([sendBuffer, crashBuffer])) for i in num_testers]
+    testers = [Thread(target=testerThread, args=([sendBuffer, crashBuffer])) for i in range(num_testers)]
     for tester in testers:
         tester.start()
 
@@ -50,9 +49,12 @@ def initMutator(inputDict: dict):
 
 def begin(inputDict: dict) -> str:
     testerThreads = initTesters()
-    mutatorThread = initMutator(inputDict)
+    mutations = mutator.getMutations()
 
-    mutatorThread.join()
+    for mutation in mutations:
+        mutationThread = initMutator(inputDict)
+        mutationThread.join()
+
     killTesters(testerThreads)
 
     return None if crashBuffer.empty() else crashBuffer.get()
