@@ -2,6 +2,7 @@ import parse
 import copy
 from subprocess import *
 from log import *
+import thread_manager
 
 def mapFuzz(inputWords: dict):
     cases = ["A", 10]
@@ -26,7 +27,7 @@ def isolateFields(inputWords: dict, output: str) -> list:
             payload = copy.deepcopy(inputWords["values"])
             payload[i] = j
             newWords["values"] = payload
-            out = outSend(newWords)
+            out,error = thread_manager.sendWithOutput(newWords, binary)
             if out != output:
                 keyIndexes.append({i: inputWords["values"][i]})
                 break
@@ -36,27 +37,16 @@ def isolateFields(inputWords: dict, output: str) -> list:
 
 def mapSend(words: dict) -> str:
     inputString = parse.getInputFromDict(words)
-
-    p = Popen(binary, stdin=PIPE, stdout=PIPE)
-    output, error = p.communicate(inputString.encode())
+    output, error = thread_manager.sendWithOutput(words, binary)
     
-    if output not in binmap:
-        binmap[output] = isolateFields(words, output)
+    if output not in binMap:
+        binMap[output] = isolateFields(words, output)
 
-    return output
-
-def outSend(words: dict) -> str:
-    inputString = parse.getInputFromDict(words)
-
-    p = Popen(binary, stdin=PIPE, stdout=PIPE)
-    output, error = p.communicate(inputString.encode())
-    
     return output
 
 def mapper(_binary: str, inputWords: dict) -> str:
-    global binary, binmap
-    binmap = {}
+    global binary, binMap
+    binMap = {}
     binary = _binary
     mapFuzz(inputWords)
-    for i in binmap:
-        print(str(i) + ": " + str(binmap[i]))
+    return binMap

@@ -50,6 +50,13 @@ def runGeneralFuzzer(binary, inputDict):
     if handleCrash(crashInput):
         exitSafely()
 
+def runMapper(binary, inputDict):
+    logger.debug('starting mapper...')
+
+    #Running the mapper, tries to find the execution paths of the program with the values needed to get there
+    binMap = map.mapper(binary, inputDict)
+    return binMap
+
 if __name__ == "__main__":
     checkArgs()
 
@@ -63,8 +70,8 @@ if __name__ == "__main__":
     # parse input into an array for the fuzzer
     inputDict = parse.getDictFromInput(inputFileName)
     
-    map.mapper(binary, inputDict)
-    exit(0)
+    binMap = runMapper(binary, inputDict)
+    print(binMap)
 
     runGeneralFuzzer(binary, inputDict)
     runLineFuzzer(binary, inputDict)

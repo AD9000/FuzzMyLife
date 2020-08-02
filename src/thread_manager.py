@@ -27,7 +27,7 @@ def testerThread(sendBuffer: Queue, crashBuffer: Queue):
         if p.returncode == -11:
             crashBuffer.put(inputString)
 
-def sendWithOutput(inputDict: dict) -> str:
+def sendWithOutput(inputDict: dict, binary) -> str:
     inputString = parse.getInputFromDict(inputDict)
 
     p = Popen(binary, stdin=PIPE, stdout=PIPE)
