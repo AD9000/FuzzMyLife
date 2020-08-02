@@ -58,4 +58,5 @@ def mapper(_binary: str, inputWords: dict) -> str:
     binmap = {}
     binary = _binary
     mapFuzz(inputWords)
-    print(binmap)
+    for i in binmap:
+        print(str(i) + ": " + str(binmap[i]))
