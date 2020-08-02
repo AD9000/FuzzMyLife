@@ -47,8 +47,8 @@ def killTesters(testers: list):
     for tester in testers:
         tester.join()
 
-def initMutator(inputDict: dict):
-    mutatorThread = Thread(target=mutator.mutate, args=([inputDict, sendBuffer, crashBuffer]))
+def initMutator(inputDict: dict, mutation):
+    mutatorThread = Thread(target=mutator.mutate, args=([inputDict, mutation, sendBuffer, crashBuffer]))
     mutatorThread.start()
 
     return mutatorThread
@@ -58,7 +58,7 @@ def begin(inputDict: dict) -> str:
     mutations = mutator.getMutations()
 
     for mutation in mutations:
-        mutationThread = initMutator(inputDict)
+        mutationThread = initMutator(inputDict, mutation)
         mutationThread.join()
 
     killTesters(testerThreads)

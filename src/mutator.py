@@ -11,8 +11,12 @@ formatcases = ["%n"*10, "%n"*100, "%1000000$x"]
 
 allcases = [*intcases, *stringcases, *formatcases]
 
-def mutateValues(inputDict: dict):
-    for i in range(len(inputDict['values'])):
+def mutateValues(inputDict: dict, start: int = 0):
+    if start > len(inputDict['values']):
+        logger.error("value too large")
+        return
+
+    for i in range(start, len(inputDict['values'])):
         testcases = [inputDict['values'][i]]
         testcases.extend(allcases)
 
@@ -30,11 +34,11 @@ def mutateCSV(inputDict: dict):
     for i in range(4):
         logger.info("+++++++++++ i = {} +++++++++++".format(i))
 
+        currLen = len(inputDict['values'])
         values = copy.deepcopy(inputDict['values'])
-        logger.info(values)
         inputDict['values'] = [*values, *values, *values]
 
-        mutateValues(inputDict)
+        mutateValues(inputDict, currLen)
         csvMutateCpl(copy.deepcopy(inputDict))
 
         if not crashBuffer.empty():
@@ -50,11 +54,11 @@ def csvMutateCpl(inputDict: dict):
 def getMutations():
     return [mutateValues, mutateCSV]
 
-def mutate(inputDict: dict, _sendBuffer: Queue, _crashBuffer: Queue) -> str:
+def mutate(inputDict: dict, mutation, _sendBuffer: Queue, _crashBuffer: Queue) -> str:
     global sendBuffer
     global crashBuffer
     sendBuffer = _sendBuffer
     crashBuffer = _crashBuffer
 
-    logger.info("running {}".format(mutator))
-    mutator(copy.deepcopy(inputDict))
+    logger.info("running {}".format(mutation))
+    mutation(copy.deepcopy(inputDict))
