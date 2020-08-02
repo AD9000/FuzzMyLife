@@ -27,6 +27,12 @@ def testerThread(sendBuffer: Queue, crashBuffer: Queue):
         if p.returncode == -11:
             crashBuffer.put(inputString)
 
+def sendWithOutput(inputDict: dict) -> str:
+    inputString = parse.getInputFromDict(inputDict)
+
+    p = Popen(binary, stdin=PIPE, stdout=PIPE)
+    return p.communicate(inputString.encode())
+
 def initTesters() -> list:
     num_testers = max(1, multiprocessing.cpu_count()-1)
     testers = [Thread(target=testerThread, args=([sendBuffer, crashBuffer])) for i in range(num_testers)]
