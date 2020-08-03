@@ -15,8 +15,6 @@ def addLines(inputWords: dict, j: int = 0) -> str:
 
     res = threaded_fuzz.threadedFuzz(binary, inputWords)
     if res is not None:
-        logger.debug("RESFDSAGDSFADS")
-        logger.debug(res)
         return res
     else:
         state = copy.deepcopy(inputWords)

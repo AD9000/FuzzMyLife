@@ -23,22 +23,28 @@ def createPayloads(inputWords: dict, sendBuffer: Queue):
         for case in testcases:
             payload = copy.deepcopy(inputWords)
             payload['values'][i] = case
-            sendBuffer.put(payload)
+            sendBuffer.put(parse.getInputFromDict(payload))
             
 '''
+consumer
 Sends payloads from the sendBuffer to the binary
 If crash is detected, payload is stored in crashBuffer
+Move to another file
 '''
 def sendPayload(sendBuffer: Queue, crashBuffer: Queue):
     while True:
-        words = sendBuffer.get()
-        if words is None or not crashBuffer.empty():
+        # words = sendBuffer.get()
+        # if words is None or not crashBuffer.empty():
+        #     break
+
+        # inputString = parse.getInputFromDict(words)
+        inputString = sendBuffer.get()
+        # sendBuffer buffer of bytes
+        if inputString is None or not crashBuffer.empty(): # not sure if the is None check still makes sense after change
             break
 
-        inputString = parse.getInputFromDict(words)
-
         p = Popen(binary, stdin=PIPE, stdout=PIPE)
-        output, error = p.communicate(inputString.encode())
+        output, error = p.communicate(inputString)
         logger.debug(output.decode())
         if (error):
             logger.error(error)
@@ -62,7 +68,7 @@ def threadedFuzz(_binary: str, inputWords: dict, fast_temp=False) -> str:
 
     # temp proof of concept measure for adding packets to queue
     if fast_temp:
-        sendBuffer.put(copy.deepcopy(inputWords))
+        sendBuffer.put(parse.getInputFromDict(copy.deepcopy(inputWords)))
         sendBuffer.put(None)
         sendPayload(sendBuffer, crashBuffer)
 

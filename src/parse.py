@@ -76,17 +76,19 @@ def parseCsv(pParsed) -> dict:
 Reconstructs valid csv input to pass into the binary
 @param: fuzzed: Mutated input from the fuzzer
 '''
-def reconstructCsv(fuzzed: dict) -> str:
+def reconstructCsv(fuzzed: dict) -> bytes:
     csv = []
     count = 0
     for i in fuzzed['values']:
+        if not isinstance(i, bytes):
+            i = str(i).encode() # baddd
         if count == fuzzed['cpl']:
             count = 0
-            csv.extend([str(i), "\n"])
+            csv.extend([i, b"\n"])
         else:
-            csv.extend([str(i), ","])
+            csv.extend([i, b","])
             count += 1
-    return ''.join(csv)
+    return b''.join(csv)
 
 
 '''
@@ -127,6 +129,12 @@ def parseJson(pParsed)-> dict:
     return { 'values': values, 'template': jsonTemplate, 'file': FileType.JSON }
 
 
+def bytesConvert(v):
+    if isinstance(v, bytes):
+        return v
+    else:
+        return str(v).encode
+
 '''
 Recursively replace template with values to create valid json input 
 @param: obj: template to be used
@@ -143,16 +151,21 @@ def repJson(obj, values) -> None:
             repJson(obj[key], values)
         else:
             obj[key] = values[obj[key]]
+            # obj[key] = b'\x05\x09'
+            # obj[key] = '\x05\x09'
+            # obj[key] = '\u00A9'
 
 '''
 Reconstructs valid json input to pass into the binary
 @param: fuzzed: Mutated input from the fuzzer
 '''
-def reconstructJson(fuzzed: dict) -> str:
+def reconstructJson(fuzzed: dict) -> bytes:
     obj = copy.deepcopy(fuzzed['template'])
     values = fuzzed['values']
     repJson(obj, values)
-    return json.dumps(obj)
+    # print(obj)
+    # print(json.dumps(obj, ensure_ascii=False).encode())
+    return json.dumps(obj, ensure_ascii=False).encode()
 
 
 '''
@@ -167,13 +180,15 @@ def parsePlaintext(pParsed) -> dict:
 Reconstructs valid plaintext input to pass into the binary
 @param: fuzzed: Mutated input from the fuzzer
 '''
-def reconstructPlaintext(fuzzed: dict) -> str:
-    pt = ""
+def reconstructPlaintext(fuzzed: dict) -> bytes:
+    pt = b""
     for i in range(0, len(fuzzed['values'])):
-        if i == (len(fuzzed['values']) - 1):
-            pt += str(fuzzed['values'][i])
+        if isinstance(fuzzed['values'][i], bytes):
+            pt += fuzzed['values'][i]
         else:
-            pt += str(fuzzed['values'][i]) + "\n"
+            pt += str(fuzzed['values'][i]).encode() # bad
+        if i < (len(fuzzed['values']) - 1):
+            pt += b"\n"
     return pt
 
 '''
@@ -234,14 +249,14 @@ def repXml(root, values) -> None:
 Reconstructs valid xml input to pass into the binary
 @param: fuzzed: Mutated input from the fuzzer
 '''
-def reconstructXml(fuzzed: dict) -> str:
+def reconstructXml(fuzzed: dict) -> bytes:
     root = copy.deepcopy(fuzzed['template'])
     values = fuzzed['values']
     for i in range(0, len(values)):
         if isinstance(values[i], int):
             values[i] = str(values[i])
     repXml(root, values)
-    return ET.tostring(root).decode()
+    return ET.tostring(root).decode().encode()
 
 
 '''
@@ -260,8 +275,8 @@ def getDictFromInput(inputFileName: str) -> dict:
 '''
 convert back the dictionary from the fuzzer to valid input
 '''
-def getInputFromDict(dic: dict) -> str:
-    output = ""
+def getInputFromDict(dic: dict) -> bytes:
+    output = b""
     if dic['file'] == FileType.JSON:
         output = reconstructJson(dic)
     elif dic['file'] == FileType.PLAINTEXT:

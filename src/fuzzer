@@ -5,13 +5,14 @@ import os
 import parse
 import line_fuzz
 import threaded_fuzz
+import bytemutate
 from log import *
 
 def handleCrash(crashInput):
     if crashInput is not None:
         logger.info("Found crash")
         logger.info(crashInput)
-        with open(os.path.join(ROOT_DIR, "bad.txt"), "w") as badtxt:
+        with open(os.path.join(ROOT_DIR, "bad.txt"), "wb") as badtxt:
             badtxt.write(crashInput)
         logger.info('\n\nBad input written to ' + os.path.join(ROOT_DIR, 'bad.txt'))
         return True
@@ -61,9 +62,17 @@ if __name__ == "__main__":
 
     # parse input into an array for the fuzzer
     inputDict = parse.getDictFromInput(inputFileName)
-    
+
     runGeneralFuzzer(binary, inputDict)
     runLineFuzzer(binary, inputDict)
+    # sendEmptyFile(binary)
+
+    if (inputDict['file'] in [parse.FileType.PLAINTEXT, parse.FileType.CSV]):
+        crashInput = bytemutate.fuzz(binary, inputDict)
+        if handleCrash(crashInput):
+            exitSafely()
+
+    
     
     # all fuzzers failed
     logger.info(":'(")
