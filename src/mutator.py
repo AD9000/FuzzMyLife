@@ -6,8 +6,12 @@ from queue import Queue
 from threading import Event
 from log import *
 
-intcases = [-1, 0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 10*(2**20), -10*(2**20), 10*(2**30), -10*(2**30)]
-overflowcases = ["A"*10, "A"*50, "A"*100, "A"*200, "A"*500, "A"*1000, "A"*10000]
+intcases = [0, 10*2**20, -10*2**20, 10*2**30, -10*2**30]
+for i in range(0, 21):
+    intcases.extend([2**i, -2**i])
+# someone pls turn this into a beautiful one-line list comprehension
+
+overflowcases = ["A"*(2**i) for i in range(2,15)]
 stringcases = ["\'", "\"", "\\", " ", "\n", "`", ",", "/", "", "\0", "ふ", "😠"]
 formatcases = ["%n"*10, "%n"*100, "%1000000$x"]
 
