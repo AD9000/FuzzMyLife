@@ -47,7 +47,8 @@ def mutate(inputDict: dict, mutation) -> str:
 def fuzzMyLife(inputDict: dict) -> str:
     mutator.setBuffers(sendBuffer, crashBuffer)
 
-    num_senders = max(1, multiprocessing.cpu_count()+9)
+    # num_senders = max(1, multiprocessing.cpu_count()+9)
+    num_senders = 12
     senders = [Thread(target=sendPayload, args=([sendBuffer, crashBuffer])) for i in range(num_senders)]
     for sender in senders:
         sender.start()
