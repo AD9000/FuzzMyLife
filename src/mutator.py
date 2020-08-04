@@ -18,8 +18,6 @@ def mutateValues(inputDict: dict, start=0):
         logger.error("value too large")
         return
 
-    # originalCopy = copy.deepcopy(inputDict)
-
     for i in range(start, len(inputDict['values'])):
         testcases = [inputDict['values'][i]]
         testcases.extend(allcases)
@@ -31,6 +29,7 @@ def mutateValues(inputDict: dict, start=0):
 
             inputDict['values'][i] = case
             sendBuffer.put(parse.getInputFromDict(inputDict))
+
         inputDict['values'][i] = tmp
 
 def mutateCSV(inputDict: dict):
@@ -67,7 +66,7 @@ bytecases.extend([0x7f])
 bytecases.extend([x for x in range(0x80, 0xff+1)])
 # try every byte value for every byte
 # super smart
-def bytemutate(inputDict: dict) -> bytes:
+def mutateBytes(inputDict: dict):
     inputBytes = parse.getInputFromDict(inputDict)
     for i in range(len(inputBytes)):
         if inputBytes[i] == b'\n' and inputDict['file'] in [parse.FileType.PLAINTEXT, parse.FileType.CSV]:
@@ -83,7 +82,7 @@ def bytemutate(inputDict: dict) -> bytes:
                 return
 
 def getMutations():
-    return [mutateValues, mutateCSV, bytemutate]
+    return [mutateValues, mutateCSV, mutateBytes]
 
 def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer

@@ -30,7 +30,7 @@ def sendWithOutput(inputBytes: bytes) -> (int, str, str):
     p = Popen(binary, stdin=PIPE, stdout=PIPE)
 
     try:
-        output, error = p.communicate(inputBytes, timeout=3)
+        output, error = p.communicate(inputBytes, timeout=5)
     except TimeoutExpired:
         print('kill')
         p.kill()
@@ -46,7 +46,7 @@ def mutate(inputDict: dict, mutation) -> str:
 def fuzzMyLife(inputDict: dict) -> str:
     mutator.setBuffers(sendBuffer, crashBuffer)
 
-    num_senders = multiprocessing.cpu_count() * 4
+    num_senders = multiprocessing.cpu_count() * 3
     senders = [Thread(target=sendPayload, args=([sendBuffer, crashBuffer])) for i in range(num_senders)]
     for sender in senders:
         sender.start()
