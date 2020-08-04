@@ -29,7 +29,7 @@ def sendPayload(sendBuffer: Queue, crashBuffer: Queue):
 def sendWithOutput(inputBytes: bytes) -> (int, str, str):
     p = Popen(binary, stdin=PIPE, stdout=PIPE)
 
-    # print(inputBytes)
+    # print(inputBytes.decode())
     try:
         output, error = p.communicate(inputBytes, timeout=1)
     except TimeoutExpired:
@@ -37,6 +37,9 @@ def sendWithOutput(inputBytes: bytes) -> (int, str, str):
         output, error = p.communicate()
 
     ret = p.returncode
+    if ret != 0:
+        print(ret)
+        print(inputBytes.decode())
 
     return ret, output, error
 
