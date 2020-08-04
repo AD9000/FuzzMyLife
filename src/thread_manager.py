@@ -59,7 +59,9 @@ def fuzzMyLife(inputDict: dict) -> str:
         # hanging here for some reason? test early exit
         mutatorThread.join()
 
-    crashBuffer.put(None)
+    for i in range(num_senders):
+        sendBuffer.put(None)
+
     for sender in senders:
         sender.join()
 
