@@ -3,6 +3,7 @@ import json
 import copy
 
 from queue import Queue
+from threading import Event
 from log import *
 
 intcases = [-1, 0, 1, 10*(2**20), -10*(2**20), 10*(2**30), -10*(2**30)]
@@ -11,7 +12,7 @@ formatcases = ["%n"*10, "%n"*100, "%1000000$x"]
 
 allcases = [*intcases, *stringcases, *formatcases]
 
-def mutateValues(inputDict: dict, start: int = 0):
+def mutateValues(inputDict: dict, start=0):
     if start > len(inputDict['values']):
         logger.error("value too large")
         return
@@ -23,6 +24,7 @@ def mutateValues(inputDict: dict, start: int = 0):
         for case in testcases:
             payload = copy.deepcopy(inputDict)
             payload['values'][i] = case
+
             sendBuffer.put(payload)
 
 def mutateCSV(inputDict: dict):
@@ -54,11 +56,8 @@ def csvMutateCpl(inputDict: dict):
 def getMutations():
     return [mutateValues, mutateCSV]
 
-def mutate(inputDict: dict, mutation, _sendBuffer: Queue, _crashBuffer: Queue) -> str:
+def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer
     global crashBuffer
     sendBuffer = _sendBuffer
     crashBuffer = _crashBuffer
-
-    logger.info("running {}".format(mutation))
-    mutation(copy.deepcopy(inputDict))

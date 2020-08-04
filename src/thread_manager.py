@@ -3,65 +3,67 @@ import mutator
 
 from subprocess import *
 import multiprocessing
-from threading import Thread
+import copy
+from threading import Thread, Event
 from queue import Queue
 from log import *
 
 sendBuffer = Queue()
 crashBuffer = Queue()
 
-def testerThread(sendBuffer: Queue, crashBuffer: Queue):
+def sendPayload(sendBuffer: Queue, crashBuffer: Queue):
     while True:
-        testInput = sendBuffer.get()
-        if testInput is None or not crashBuffer.empty():
+        if not crashBuffer.empty():
             break
 
-        inputString = parse.getInputFromDict(testInput)
+        testInput = sendBuffer.get()
+        if testInput is None:
+            break
 
-        p = Popen(binary, stdin=PIPE, stdout=PIPE)
-        output, error = p.communicate(inputString.encode())
+        ret, output, error = sendWithOutput(testInput)
 
         if (error):
             logger.debug(output)
             logger.error(error)
-        if p.returncode == -11:
-            crashBuffer.put(inputString)
+
+        if ret == -11:
+            crashBuffer.put(parse.getInputFromDict(testInput))
 
 def sendWithOutput(inputDict: dict) -> str:
     inputString = parse.getInputFromDict(inputDict)
 
     p = Popen(binary, stdin=PIPE, stdout=PIPE)
-    return p.communicate(inputString.encode())
 
-def initTesters() -> list:
-    num_testers = max(1, multiprocessing.cpu_count()-1)
-    testers = [Thread(target=testerThread, args=([sendBuffer, crashBuffer])) for i in range(num_testers)]
-    for tester in testers:
-        tester.start()
+    try:
+        output, error = p.communicate(inputString.encode(), timeout=1)
+    except TimeoutExpired:
+        p.kill()
+        output, error = p.communicate()
 
-    return testers
+    return p.returncode, output, error
 
-def killTesters(testers: list):
-    crashBuffer.put(None)
-    
-    for tester in testers:
-        tester.join()
+def mutate(inputDict: dict, mutation) -> str:
+    mutation(copy.deepcopy(inputDict))
 
-def initMutator(inputDict: dict, mutation):
-    mutatorThread = Thread(target=mutator.mutate, args=([inputDict, mutation, sendBuffer, crashBuffer]))
-    mutatorThread.start()
+def fuzzMyLife(inputDict: dict) -> str:
+    mutator.setBuffers(sendBuffer, crashBuffer)
 
-    return mutatorThread
+    num_senders = max(1, multiprocessing.cpu_count()-1)
+    senders = [Thread(target=sendPayload, args=([sendBuffer, crashBuffer])) for i in range(num_senders)]
+    for sender in senders:
+        sender.start()
 
-def begin(inputDict: dict) -> str:
-    testerThreads = initTesters()
     mutations = mutator.getMutations()
-
     for mutation in mutations:
-        mutationThread = initMutator(inputDict, mutation)
-        mutationThread.join()
+        mutatorThread = Thread(target=mutate, args=([inputDict, mutation]))
+        mutatorThread.start()
 
-    killTesters(testerThreads)
+        # hanging here for some reason? test early exit
+        mutatorThread.join()
+
+    crashBuffer.put(None)
+    for sender in senders:
+        sender.join()
 
     return None if crashBuffer.empty() else crashBuffer.get()
 
