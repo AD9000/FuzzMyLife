@@ -60,6 +60,11 @@ def csvMutateCpl(inputDict: dict):
             sendBuffer.put(parse.getInputFromDict(inputDict))
 
 
+bytecases = []
+bytecases.extend([x for x in range(0,0x20)])
+bytecases.extend([x for x in range(0x21, 0x7f, 2)])
+bytecases.extend([0x7f])
+bytecases.extend([x for x in range(0x80, 0xff+1)])
 # try every byte value for every byte
 # super smart
 def bytemutate(inputDict: dict) -> bytes:
@@ -68,7 +73,7 @@ def bytemutate(inputDict: dict) -> bytes:
         if inputBytes[i] == b'\n' and inputDict['file'] in [parse.FileType.PLAINTEXT, parse.FileType.CSV]:
             # to not screw up number of lines required...
             continue
-        for case in range(0, 0xff+1, 1):
+        for case in bytecases:
             if i < len(inputBytes)-1:
                 payload = inputBytes[:i] + case.to_bytes(1, 'little') + inputBytes[i+1:]
             else:
