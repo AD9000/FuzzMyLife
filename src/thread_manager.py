@@ -13,11 +13,8 @@ crashBuffer = Queue()
 
 def sendPayload(sendBuffer: Queue, crashBuffer: Queue):
     while True:
-        if not crashBuffer.empty():
-            break
-
         testInput = sendBuffer.get()
-        if testInput is None:
+        if testInput is None or not crashBuffer.empty():
             break
 
         ret, output, error = sendWithOutput(testInput)
@@ -38,7 +35,11 @@ def sendWithOutput(inputBytes: bytes) -> (int, str, str):
         p.kill()
         output, error = p.communicate()
 
-    return p.returncode, output, error
+    ret = p.returncode
+    
+    p.kill()
+
+    return ret, output, error
 
 def mutate(inputDict: dict, mutation) -> str:
     mutation(copy.deepcopy(inputDict))
@@ -46,7 +47,7 @@ def mutate(inputDict: dict, mutation) -> str:
 def fuzzMyLife(inputDict: dict) -> str:
     mutator.setBuffers(sendBuffer, crashBuffer)
 
-    num_senders = max(1, multiprocessing.cpu_count()-1)
+    num_senders = max(1, multiprocessing.cpu_count()+9)
     senders = [Thread(target=sendPayload, args=([sendBuffer, crashBuffer])) for i in range(num_senders)]
     for sender in senders:
         sender.start()
@@ -56,7 +57,6 @@ def fuzzMyLife(inputDict: dict) -> str:
         mutatorThread = Thread(target=mutate, args=([inputDict, mutation]))
         mutatorThread.start()
 
-        # hanging here for some reason? test early exit
         mutatorThread.join()
 
     for i in range(num_senders):

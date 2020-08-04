@@ -17,15 +17,19 @@ def mutateValues(inputDict: dict, start=0):
         logger.error("value too large")
         return
 
+    originalCopy = copy.deepcopy(inputDict)
+
     for i in range(start, len(inputDict['values'])):
         testcases = [inputDict['values'][i]]
         testcases.extend(allcases)
 
         for case in testcases:
-            payload = copy.deepcopy(inputDict)
-            payload['values'][i] = case
+            if not crashBuffer.empty():
+                return
 
-            sendBuffer.put(parse.getInputFromDict(payload))
+            originalCopy['values'][i] = case
+            sendBuffer.put(parse.getInputFromDict(originalCopy))
+            originalCopy = inputDict
 
 def mutateCSV(inputDict: dict):
     if inputDict['file'] != parse.FileType.CSV:
