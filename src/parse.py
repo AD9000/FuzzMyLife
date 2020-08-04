@@ -81,7 +81,7 @@ def reconstructCsv(fuzzed: dict) -> bytes:
     count = 0
     for i in fuzzed['values']:
         if not isinstance(i, bytes):
-            i = str(i).encode() # baddd
+            i = str(i).encode() # bad?
         if count == fuzzed['cpl']:
             count = 0
             csv.extend([i, b"\n"])
@@ -246,8 +246,7 @@ def reconstructXml(fuzzed: dict) -> bytes:
         if isinstance(values[i], int):
             values[i] = str(values[i])
     repXml(root, values)
-    print(type(ET.tostring(root)))
-    return ET.tostring(root).decode().encode()
+    return ET.tostring(root)
 
 
 '''

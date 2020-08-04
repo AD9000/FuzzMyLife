@@ -21,8 +21,8 @@ def mutateValues(inputDict: dict, start=0):
         testcases = [inputDict['values'][i]]
         testcases.extend(allcases)
 
+        payload = copy.deepcopy(inputDict)
         for case in testcases:
-            payload = copy.deepcopy(inputDict)
             payload['values'][i] = case
 
             sendBuffer.put(parse.getInputFromDict(payload))
@@ -53,8 +53,26 @@ def csvMutateCpl(inputDict: dict):
             inputDict['cpl'] = i-1
             sendBuffer.put(parse.getInputFromDict(inputDict))
 
+
+# try every byte value for every byte
+# super smart
+def bytemutate(inputDict: dict) -> bytes:
+    inputBytes = parse.getInputFromDict(inputDict)
+    for i in range(len(inputBytes)):
+        if inputBytes[i] == b'\n' and inputDict['file'] in [parse.FileType.PLAINTEXT, parse.FileType.CSV]:
+            # to not screw up number of lines required...
+            continue
+        for case in range(0, 0xff+1, 1):
+            if i < len(inputBytes)-1:
+                payload = inputBytes[:i] + case.to_bytes(1, 'little') + inputBytes[i+1:]
+            else:
+                payload = inputBytes[:i] + case.to_bytes(1, 'little')
+            sendBuffer.put(payload)
+            if not crashBuffer.empty():
+                return
+
 def getMutations():
-    return [mutateValues, mutateCSV]
+    return [mutateValues, mutateCSV, bytemutate]
 
 def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer
