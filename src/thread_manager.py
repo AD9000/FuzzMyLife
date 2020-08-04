@@ -27,15 +27,13 @@ def sendPayload(sendBuffer: Queue, crashBuffer: Queue):
             logger.error(error)
 
         if ret == -11:
-            crashBuffer.put(parse.getInputFromDict(testInput))
+            crashBuffer.put(testInput)
 
-def sendWithOutput(inputDict: dict) -> str:
-    inputString = parse.getInputFromDict(inputDict)
-
+def sendWithOutput(inputBytes: bytes) -> (int, str, str):
     p = Popen(binary, stdin=PIPE, stdout=PIPE)
 
     try:
-        output, error = p.communicate(inputString.encode(), timeout=1)
+        output, error = p.communicate(inputBytes, timeout=1)
     except TimeoutExpired:
         p.kill()
         output, error = p.communicate()

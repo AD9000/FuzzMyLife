@@ -25,7 +25,7 @@ def mutateValues(inputDict: dict, start=0):
             payload = copy.deepcopy(inputDict)
             payload['values'][i] = case
 
-            sendBuffer.put(payload)
+            sendBuffer.put(parse.getInputFromDict(payload))
 
 def mutateCSV(inputDict: dict):
     if inputDict['file'] != parse.FileType.CSV:
@@ -51,7 +51,7 @@ def csvMutateCpl(inputDict: dict):
     for i in range(1, len(values)):
         if len(values) % i == 0:
             inputDict['cpl'] = i-1
-            sendBuffer.put(inputDict)
+            sendBuffer.put(parse.getInputFromDict(inputDict))
 
 def getMutations():
     return [mutateValues, mutateCSV]

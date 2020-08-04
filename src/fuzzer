@@ -9,10 +9,10 @@ import thread_manager
 from log import *
 from queue import Queue
 
-def handleCrash(crashInput: str) -> bool:
+def handleCrash(crashInput: bytes) -> bool:
     if crashInput is not None:
         logger.info("Found crash")
-        with open(os.path.join(ROOT_DIR, "bad.txt"), "w") as badtxt:
+        with open(os.path.join(ROOT_DIR, "bad.txt"), "wb") as badtxt:
             badtxt.write(crashInput)
         logger.info('Bad input written to ' + os.path.join(ROOT_DIR, 'bad.txt'))
         return True
