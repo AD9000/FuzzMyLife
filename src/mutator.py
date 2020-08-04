@@ -7,10 +7,11 @@ from threading import Event
 from log import *
 
 intcases = [0, 10*2**20, -10*2**20, 10*2**30, -10*2**30]
-for i in range(0, 21):
-    intcases.extend([2**i, -2**i])
 # someone pls turn this into a beautiful one-line list comprehension
-
+# for i in range(0, 21):
+#     intcases.extend([2**i, -2**i])
+intcases.extend(f(i) for i in range(21) for f in (lambda x: 2**x, lambda x: -2**x))
+#:)
 overflowcases = ["A"*(2**i) for i in range(2,15)]
 stringcases = ["\'", "\"", "\\", " ", "\n", "`", ",", "/", "", "\0", "ふ", "😠"]
 formatcases = ["%n"*10, "%n"*100, "%1000000$x"]
