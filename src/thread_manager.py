@@ -30,8 +30,9 @@ def sendWithOutput(inputBytes: bytes) -> (int, str, str):
     p = Popen(binary, stdin=PIPE, stdout=PIPE)
 
     try:
-        output, error = p.communicate(inputBytes, timeout=1)
+        output, error = p.communicate(inputBytes, timeout=3)
     except TimeoutExpired:
+        print('kill')
         p.kill()
         output, error = p.communicate()
 
