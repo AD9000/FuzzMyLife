@@ -1,7 +1,9 @@
 import parse
 import json
 import copy
+import xml.etree.ElementTree as ET
 
+from fileTypes import *
 from queue import Queue
 from threading import Event
 from log import *
@@ -38,7 +40,7 @@ def mutateValues(inputDict: dict, start=0):
         inputDict['values'][i] = tmp
 
 def mutateCSV(inputDict: dict):
-    if inputDict['file'] != parse.FileType.CSV:
+    if inputDict.get('file') != FileType.CSV:
         return
 
     csvMutateCpl(copy.deepcopy(inputDict))
@@ -74,7 +76,7 @@ bytecases.extend([x for x in range(0x80, 0xff+1)])
 def mutateBytes(inputDict: dict):
     inputBytes = parse.getInputFromDict(inputDict)
     for i in range(len(inputBytes)):
-        if inputBytes[i] == b'\n' and inputDict['file'] in [parse.FileType.PLAINTEXT, parse.FileType.CSV]:
+        if inputBytes[i] == b'\n' and inputDict['file'] in [FileType.PLAINTEXT, FileType.CSV]:
             # to not screw up number of lines required...
             continue
         for case in bytecases:
@@ -86,8 +88,46 @@ def mutateBytes(inputDict: dict):
             if not crashBuffer.empty():
                 return
 
+def multiplyJSON(inputDict: dict, repeatTimes: int=15):
+    if inputDict.get('file') != FileType.JSON:
+        return
+
+    rawJson = parse.getInputFromDict(inputDict)
+    jsonObj = json.loads(rawJson)
+    multiplier = 1
+ 
+    for _ in range(repeatTimes):
+        multiplier *= 2
+        inputString = json.dumps([jsonObj] * multiplier)
+        sendBuffer.put(inputString.encode())
+
+def multiplyXML(inputDict: dict, maxMultiplier: int = 15):
+    if inputDict.get('file') != FileType.XML:
+        return
+    
+    rawXml = ET.ElementTree(ET.fromstring(parse.getInputFromDict(inputDict)))
+    multiplier = 1
+    root = rawXml.getroot()
+    newRoot = copy.deepcopy(root)
+
+    # at 2^15, the xml input is already 10Mb long 
+    for _ in range(maxMultiplier):
+        multiplier *= 2
+        newRoot.extend(list(root) * multiplier)
+        inputString = ET.tostring(newRoot)
+        sendBuffer.put(inputString)
+
+def invalidMultiplyInput(inputDict: dict, repeatTimes: int = 15):
+    rawInput = parse.getInputFromDict(inputDict)
+    multiplier = 1
+
+    for _ in range(repeatTimes):
+        multiplier *= 2
+        inputString = rawInput * multiplier
+        sendBuffer.put(inputString.encode())
+
 def getMutations():
-    return [mutateValues, mutateCSV, mutateBytes]
+    return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, mutateBytes]
 
 def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer

@@ -1,4 +1,3 @@
-from enum import Enum, auto
 import json
 import xml.etree.ElementTree as ET
 import csv
@@ -6,14 +5,7 @@ import sys
 import copy
 
 from log import *
-
-class FileType(Enum):
-    PLAINTEXT = auto()
-    CSV = auto()
-    JSON = auto()
-    XML = auto()
-    NONE = auto()
-
+from fileTypes import *
 
 count = 0
 xmlTemplate = None
