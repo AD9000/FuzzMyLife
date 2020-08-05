@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# Adds all the aliases to the current terminal session
+check="`echo $0 | cut -c1`"
+curr_dir=`pwd`
+FILE_PATH=""
+
+if [ $check = '.' ]
+then
+    FILE_PATH="$curr_dir`echo $0 | cut -c2-`"
+elif [ $check = '/' ]
+then
+    FILE_PATH="$0"
+else
+    echo "interesting file path: $curr_dir, $0"
+    exit 1
+fi
+
+SCRIPTS_DIR="`dirname $FILE_PATH`"
+ROOT_DIR="`dirname $SCRIPTS_DIR`"
+
+chmod +x "$ROOT_DIR/scripts/runFuzzer"
+chmod +x "$ROOT_DIR/scripts/fuzzAllBinaries"
+chmod +x "$ROOT_DIR/src/fuzzer"
+chmod +x "$ROOT_DIR/scripts/uninstall"
+
+# The aliases you should use
+echo "alias fuzz="$ROOT_DIR/scripts/runFuzzer"" >> ~/.bash_aliases
+echo "alias fuzzAll="$ROOT_DIR/scripts/fuzzAllBinaries"" >> ~/.bash_aliases
+
+# Raw fuzzer alias
+echo "alias fml="$ROOT_DIR/src/fuzzer"" >> ~/.bash_aliases
+echo "alias uninstallFuzz="$ROOT_DIR/scripts/uninstall"" >> ~/.bash_aliases
+
+echo "Done. Restart/Open new terminal for the changes to take effect"
+echo "Run fuzzer in debug mode with fuzz"
+echo "Run fuzzer with fml"
+echo 'Uninstall using "uninstallFuzz" or ./scripts/uninstall'
+echo "Note: the install only adds aliases, so careful with the ~/.bash_aliases file for now :)"
+
+

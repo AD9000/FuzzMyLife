@@ -1,0 +1,38 @@
+#!/bin/sh
+
+check="`echo $0 | cut -c1`"
+
+curr_dir=`pwd`
+FILE_PATH=""
+
+if [ $check = '.' ]
+then
+    FILE_PATH="$curr_dir`echo $0 | cut -c2-`"
+elif [ $check = '/' ]
+then
+    FILE_PATH="$0"
+else
+    echo "interesting file path: $curr_dir, $0"
+    exit 1
+fi
+
+SCRIPTS_DIR="`dirname $FILE_PATH`"
+ROOT_DIR="`dirname $SCRIPTS_DIR`"
+
+# Unique directory to store logs
+uuid="`cat /proc/sys/kernel/random/uuid`"
+
+# create directory
+mkdir -p "$ROOT_DIR"/logs/$uuid
+
+for input in "$ROOT_DIR"/bin/*.txt
+do
+    binary="`echo $input | sed s/\.txt//`"
+    replacer="`dirname "$binary"`"
+    crashfile="`echo "$input" | sed "s!$replacer!!" | cut -c2-`"
+
+    binName="`echo "$crashfile" | sed s/\.txt//`"
+    logfile="$binName.log.txt"
+
+    "$ROOT_DIR"/src/fuzzer "$binary" "$input" -d --crashfile $uuid/$crashfile --logfile $uuid/$logfile
+done
