@@ -45,6 +45,7 @@ def mutateValues(inputDict: dict, start=0):
 
                 inputDict[fieldType][i] = case
                 sendBuffer.put(parse.getInputFromDict(inputDict))
+                # print(parse.getInputFromDict(inputDict))
 
             inputDict[fieldType][i] = tmp
 
@@ -116,7 +117,7 @@ def mutateBytes(inputDict: dict):
             # insertpayload = inputBytes + case.to_bytes(1, 'little')
         sendBuffer.put(replacepayload)
         # sendBuffer.put(insertpayload)
-        # if not crashBuffer.empty()
+        # if not crashBuffer.empty(): return # should do this or no? It's slow I think.
 
 def multiplyJSON(inputDict: dict, repeatTimes: int=15):
     if inputDict.get('file') != FileType.JSON:

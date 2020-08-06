@@ -87,24 +87,27 @@ def reconstructCsv(fuzzed: dict) -> bytes:
 Recursively parse json and generate template to be used for reconstruction 
 @param: obj: valid json to be parsed
 '''
-def recJson(obj, values: list = [], jsonTemplate: dict = {}, count: int = 0) -> (list, dict):
+# can't deal with lists of dictionaries
+def recJson(obj: dict, values: list = [], jsonTemplate: dict = {}, count: int = 0, tags: list = []) -> (list, dict):
     # global jsonTemplate
     # global count
     # global values
     for key in obj.keys():
+        tags.append(key)
+        tmpkey = len(tags)-1
         if isinstance(obj[key], list):
-            jsonTemplate[key] = []
+            jsonTemplate[tmpkey] = []
             for value in obj[key]:
-                jsonTemplate[key].append(count)
+                jsonTemplate[tmpkey].append(count)
                 count = count + 1
                 values.append(value)
         elif isinstance(obj[key], dict):
-            values, jsonTemplate, count = recJson(obj[key], values, jsonTemplate)
+            values, jsonTemplate, count, tags = recJson(obj[key], values, jsonTemplate, tags)
         else:
-            jsonTemplate[key] = count
+            jsonTemplate[tmpkey] = count
             count = count + 1
             values.append(obj[key])
-    return values, jsonTemplate, count
+    return values, jsonTemplate, count, tags
 
 '''
 Parses the json file to generate input dict for the fuzzer
@@ -118,35 +121,41 @@ def parseJson(pParsed)-> dict:
     # count = 0
     # values = []
     # jsonTemplate = {}
-    values, jsonTemplate, _ = recJson(pParsed)
-    return { 'values': values, 'template': jsonTemplate, 'file': FileType.JSON }
+    values, jsonTemplate, _, tags = recJson(pParsed)
+    # print({ 'values': values, 'tags': tags, 'template': jsonTemplate, 'file': FileType.JSON })
+    return { 'values': values, 'tags': tags, 'template': jsonTemplate, 'file': FileType.JSON }
 
 
 '''
 Recursively replace template with values to create valid json input 
-@param: obj: template to be used
+@param: tmpl: template to be used
 @param: values: values dict to be inserted
 '''
-def repJson(obj, values) -> None:
-    for key in obj.keys():
-        if isinstance(obj[key], list):
+def repJson(tmpl: dict, values: list, tags: list) -> None:
+    # print(tmpl, values, tags)
+    obj = {}
+    for tmpkey in tmpl.keys():
+        key = tags[tmpkey]
+        if isinstance(tmpl[tmpkey], list):
             replist = []
-            for value in obj[key]:
+            for value in tmpl[tmpkey]:
                 replist.append(values[value])
             obj[key] = replist
-        elif isinstance(obj[key], dict):
-            repJson(obj[key], values)
+        elif isinstance(tmpl[tmpkey], dict):
+            repJson(tmpl[tmpkey], values, tags)
         else:
-            obj[key] = values[obj[key]]
+            obj[key] = values[tmpl[tmpkey]]
+    # print(obj)
+    return obj
 
 '''
 Reconstructs valid json input to pass into the binary
 @param: fuzzed: Mutated input from the fuzzer
 '''
 def reconstructJson(fuzzed: dict) -> bytes:
-    obj = copy.deepcopy(fuzzed['template'])
+    # obj = copy.deepcopy(fuzzed['template'])
     values = fuzzed['values']
-    repJson(obj, values)
+    obj = repJson(fuzzed['template'], values, fuzzed['tags'])
     return json.dumps(obj, ensure_ascii=False).encode()
     # I don't think ensure_ascii is actually doing anything
 
@@ -261,7 +270,9 @@ convert the input file to something the fuzzer likes (a dictionary)
 def getDictFromInput(inputFileName: str) -> dict:
     fileType, pparsed = classifyFile(inputFileName)
     logger.debug(fileType)
-    return parsers[fileType](pparsed)
+    a = parsers[fileType](pparsed)
+    print(a)
+    return a
 
 '''
 convert back the dictionary from the fuzzer to valid input
