@@ -18,33 +18,41 @@ intcases = [0, 2**31-1, -2**31, 2**32-1, -(2**32-1), 10*2**20, -10*2**20, 10*2**
 intcases.extend(f(i) for i in range(21) for f in (lambda x: 2**x, lambda x: -2**x))
 #:)
 overflowcases = ["A"*(2**i) for i in range(2,15)]
-stringcases = ["\'", "\"", "\\", " ", "\n", "`", ",", "/", "", "\0", "ふ", "😠", "🐨", "}", ";"] # "{" breaks Python's xml parser
+stringcases = ["\'", "\"", "\\", " ", "\n", "`", ",", "/", "", "\0", "ふ", "😠", "🐨", "}", ";", "X "*10] # "{" breaks Python's xml parser
+stringcases.extend([" ".join(stringcases)])
 formatcases = ["%n"*10, "%n"*100, "%1000000$x"]
 
 allcases = [*intcases, *overflowcases, *stringcases, *formatcases]
 
+# what is start for
 def mutateValues(inputDict: dict, start=0):
+    logger.info('Mutate values')
     if start > len(inputDict['values']):
         logger.error("value too large")
         return
 
-    for i in range(start, len(inputDict['values'])):
-        testcases = [inputDict['values'][i]]
-        testcases.extend(allcases)
+    for fieldType in ['values', 'tags']:
+        if fieldType not in inputDict:
+            continue
+        for i in range(start, len(inputDict[fieldType])):
+            # testcases = [inputDict[j][i]] # how did noone realise that when we are testing one field at a time this just tests the sample input
+            testcases = allcases
 
-        tmp = inputDict['values'][i]
-        for case in testcases:
-            if not crashBuffer.empty():
-                return
+            tmp = inputDict[fieldType][i]
+            for case in testcases:
+                if not crashBuffer.empty():
+                    return
 
-            inputDict['values'][i] = case
-            sendBuffer.put(parse.getInputFromDict(inputDict))
+                inputDict[fieldType][i] = case
+                sendBuffer.put(parse.getInputFromDict(inputDict))
 
-        inputDict['values'][i] = tmp
+            inputDict[fieldType][i] = tmp
 
 def mutateCSV(inputDict: dict):
     if inputDict.get('file') != FileType.CSV:
         return
+    logger.info('Multiply CSV')
+    
 
     csvMutateCpl(copy.deepcopy(inputDict))
 
@@ -80,12 +88,13 @@ def csvMutateCpl(inputDict: dict):
 bcases = [x for x in range(0xff+1)]
 
 def mutateBytes(inputDict: dict):
+    logger.info('Mutate bytes')
     inputBytes = parse.getInputFromDict(inputDict)
     cases = [(i, j) for i in range(len(inputBytes)) for j in range(len(bcases))] # takes ~.2 seconds to generate list for (500, 0x100)
     random.shuffle(cases)
     removes = []
     for case in cases:
-        print(case)
+        # print(case)
         index = case[0]
         byte = case[1]
         if inputBytes[index] == b'\n' and inputDict['file'] in [FileType.PLAINTEXT, FileType.CSV]:
@@ -112,6 +121,7 @@ def mutateBytes(inputDict: dict):
 def multiplyJSON(inputDict: dict, repeatTimes: int=15):
     if inputDict.get('file') != FileType.JSON:
         return
+    logger.info('Multiply JSON')
 
     rawJson = parse.getInputFromDict(inputDict)
     jsonObj = json.loads(rawJson)
@@ -125,6 +135,7 @@ def multiplyJSON(inputDict: dict, repeatTimes: int=15):
 def multiplyXML(inputDict: dict, maxMultiplier: int = 15):
     if inputDict.get('file') != FileType.XML:
         return
+    logger.info('Multiply XML')
     
     rawXml = ET.ElementTree(ET.fromstring(parse.getInputFromDict(inputDict)))
     multiplier = 1
@@ -139,16 +150,17 @@ def multiplyXML(inputDict: dict, maxMultiplier: int = 15):
         sendBuffer.put(inputString)
 
 def invalidMultiplyInput(inputDict: dict, repeatTimes: int = 15):
+    logger.info('Syntax-less multiply')
     rawInput = parse.getInputFromDict(inputDict)
     multiplier = 1
 
     for _ in range(repeatTimes):
         multiplier *= 2
         inputString = rawInput * multiplier
-        sendBuffer.put(inputString.encode())
+        sendBuffer.put(inputString)
 
 def getMutations():
-    return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, mutateBytes]
+    return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, invalidMultiplyInput, mutateBytes]
     # return [mutateBytes]
 def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer
