@@ -8,14 +8,17 @@ from queue import Queue
 from threading import Event
 from log import *
 
-intcases = [0, 10*2**20, -10*2**20, 10*2**30, -10*2**30]
+import random
+
+
+intcases = [0, 2**31-1, -2**31, 2**32-1, -(2**32-1), 10*2**20, -10*2**20, 10*2**30, -10*2**30]
 # someone pls turn this into a beautiful one-line list comprehension
 # for i in range(0, 21):
 #     intcases.extend([2**i, -2**i])
 intcases.extend(f(i) for i in range(21) for f in (lambda x: 2**x, lambda x: -2**x))
 #:)
 overflowcases = ["A"*(2**i) for i in range(2,15)]
-stringcases = ["\'", "\"", "\\", " ", "\n", "`", ",", "/", "", "\0", "ふ", "😠"]
+stringcases = ["\'", "\"", "\\", " ", "\n", "`", ",", "/", "", "\0", "ふ", "😠", "🐨", "}", ";"] # "{" breaks Python's xml parser
 formatcases = ["%n"*10, "%n"*100, "%1000000$x"]
 
 allcases = [*intcases, *overflowcases, *stringcases, *formatcases]
@@ -66,27 +69,45 @@ def csvMutateCpl(inputDict: dict):
             sendBuffer.put(parse.getInputFromDict(inputDict))
 
 
-bytecases = []
-bytecases.extend([x for x in range(0,0x20)])
-bytecases.extend([x for x in range(0x21, 0x7f, 2)])
-bytecases.extend([0x7f])
-bytecases.extend([x for x in range(0x80, 0xff+1)])
-# try every byte value for every byte
-# super smart
+# if short, want to try more values for each
+# if long, want to test more places
+# so first test some values for a large number of places
+# then test more values for those places
+# then more
+# if its short, we'll have time to get through all cases
+# if long, we will have tested a variety of places
+# actually I'm going through every case, but in random order. that should achieve the above as well.
+bcases = [x for x in range(0xff+1)]
+
 def mutateBytes(inputDict: dict):
     inputBytes = parse.getInputFromDict(inputDict)
-    for i in range(len(inputBytes)):
-        if inputBytes[i] == b'\n' and inputDict['file'] in [FileType.PLAINTEXT, FileType.CSV]:
+    cases = [(i, j) for i in range(len(inputBytes)) for j in range(len(bcases))] # takes ~.2 seconds to generate list for (500, 0x100)
+    random.shuffle(cases)
+    removes = []
+    for case in cases:
+        print(case)
+        index = case[0]
+        byte = case[1]
+        if inputBytes[index] == b'\n' and inputDict['file'] in [FileType.PLAINTEXT, FileType.CSV]:
             # to not screw up number of lines required...
             continue
-        for case in bytecases:
-            if i < len(inputBytes)-1:
-                payload = inputBytes[:i] + case.to_bytes(1, 'little') + inputBytes[i+1:]
-            else:
-                payload = inputBytes[:i] + case.to_bytes(1, 'little')
+        # remove byte
+        if index not in removes:
+            payload = inputBytes[:index] + inputBytes[index+1:]
             sendBuffer.put(payload)
-            if not crashBuffer.empty():
-                return
+            removes.extend([index])
+        # replace byte
+        if index < len(inputBytes)-1:
+            # replace byte
+            replacepayload = inputBytes[:index] + byte.to_bytes(1, 'little') + inputBytes[index+1:]
+            # insert byte
+            # insertpayload = inputBytes[:i] + case.to_bytes(1, 'little') + inputBytes[i:]
+        else:
+            replacepayload = inputBytes[:index] + byte.to_bytes(1, 'little')
+            # insertpayload = inputBytes + case.to_bytes(1, 'little')
+        sendBuffer.put(replacepayload)
+        # sendBuffer.put(insertpayload)
+        # if not crashBuffer.empty()
 
 def multiplyJSON(inputDict: dict, repeatTimes: int=15):
     if inputDict.get('file') != FileType.JSON:
@@ -128,7 +149,7 @@ def invalidMultiplyInput(inputDict: dict, repeatTimes: int = 15):
 
 def getMutations():
     return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, mutateBytes]
-
+    # return [mutateBytes]
 def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer
     global crashBuffer

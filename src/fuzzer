@@ -41,6 +41,8 @@ if __name__ == "__main__":
     
     logger.info('Starting fuzzer...')
 
+    # run once with sample input to get runtime. timeout = 5+runtime
+
     crashInput = thread_manager.fuzzMyLife(inputDict)
     if handleCrash(crashInput):
         logger.info("done")
