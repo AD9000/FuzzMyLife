@@ -9,6 +9,9 @@ import thread_manager
 from queue import Queue
 from log import logger, CRASH_DIR
 
+import timeit
+import math
+
 crashFile = 'bad.txt'
 
 if '--crashfile' in sys.argv:
@@ -39,11 +42,15 @@ if __name__ == "__main__":
     inputDict = parse.getDictFromInput(inputFileName)
     thread_manager.setBinary(binary)
     
-    logger.info('Starting fuzzer...')
-
     # run once with sample input to get runtime. timeout = 5+runtime
+    # might be pointless because all the sample binaries run in << 1 second anyway
+    t = timeit.timeit(stmt=f"subprocess.call('{binary}', stdin=fp)", setup=f"import subprocess; fp=open('{inputFileName}', 'rb')", number=1)
+    logger.info(f"runtime: {t}")
+    runtime = math.ceil(t)
 
-    crashInput = thread_manager.fuzzMyLife(inputDict)
+    logger.info('\nStarting fuzzer...')
+
+    crashInput = thread_manager.fuzzMyLife(inputDict, runtime)
     if handleCrash(crashInput):
         logger.info("done")
     else:

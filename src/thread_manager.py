@@ -11,26 +11,25 @@ from log import *
 sendBuffer = Queue()
 crashBuffer = Queue()
 
-def sendPayload(sendBuffer: Queue, crashBuffer: Queue):
+def sendPayload(sendBuffer: Queue, crashBuffer: Queue, timeout: int):
     while True:
         testInput = sendBuffer.get()
         if testInput is None or not crashBuffer.empty():
             break
 
-        ret, output, error = sendWithOutput(testInput)
+        ret, output, error = sendWithOutput(testInput, timeout)
 
         if (error):
             logger.debug(output)
-            logger.error(error)
+            # logger.error(error)
 
         if ret == -11:
             crashBuffer.put(testInput)
 
-def sendWithOutput(inputBytes: bytes) -> (int, str, str):
-    p = Popen(binary, stdin=PIPE, stdout=PIPE)
-
+def sendWithOutput(inputBytes: bytes, timeout: int) -> (int, str, str):
+    p = Popen(binary, stdin=PIPE, stdout=PIPE, stderr=PIPE)
     try:
-        output, error = p.communicate(inputBytes, timeout=5)
+        output, error = p.communicate(inputBytes, timeout=timeout)
     except TimeoutExpired:
         print('kill')
         p.kill()
@@ -43,16 +42,17 @@ def sendWithOutput(inputBytes: bytes) -> (int, str, str):
 def mutate(inputDict: dict, mutation) -> str:
     mutation(copy.deepcopy(inputDict))
 
-def fuzzMyLife(inputDict: dict) -> str:
+def fuzzMyLife(inputDict: dict, runtime: int) -> str:
     mutator.setBuffers(sendBuffer, crashBuffer)
 
-    num_senders = multiprocessing.cpu_count() * 3
-    senders = [Thread(target=sendPayload, args=([sendBuffer, crashBuffer])) for i in range(num_senders)]
+    num_senders = multiprocessing.cpu_count() * 2
+    senders = [Thread(target=sendPayload, args=([sendBuffer, crashBuffer, 5+runtime])) for i in range(num_senders)]
     for sender in senders:
         sender.start()
 
     mutations = mutator.getMutations()
     for mutation in mutations:
+        # logger.info(mutation.__name__)
         mutatorThread = Thread(target=mutate, args=([inputDict, mutation]))
         mutatorThread.start()
 

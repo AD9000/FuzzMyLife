@@ -162,7 +162,7 @@ def invalidMultiplyInput(inputDict: dict, repeatTimes: int = 15):
 
 def getMutations():
     return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, invalidMultiplyInput, mutateBytes]
-    # return [mutateBytes]
+    
 def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer
     global crashBuffer
