@@ -9,6 +9,7 @@ from threading import Event
 from log import *
 
 import random
+import sys
 
 
 intcases = [0, 2**31-1, -2**31, 2**32-1, -(2**32-1), 10*2**20, -10*2**20, 10*2**30, -10*2**30]
@@ -160,8 +161,29 @@ def invalidMultiplyInput(inputDict: dict, repeatTimes: int = 15):
         inputString = rawInput * multiplier
         sendBuffer.put(inputString)
 
+def mutateXML(inputDict: dict):
+    # root = inputDict['template']
+    root = ET.ElementTree(ET.fromstring(parse.getInputFromDict(inputDict))).getroot()
+    print(type(root))
+    print(len(root))
+    for _ in range(0, len(root)-1):
+        root[1].append(root[0])
+        root.remove(root[0])
+        # root[i].append(root[i-1])
+        # print(len(root[i]))
+        sys.stdout.buffer.write(ET.tostring(root))
+        sendBuffer.put(ET.tostring(root))
+        # root[i][len(root[i])-1].append(root[max(0, i-1)])
+
+    # child = root[0]
+    # print(child.tag)
+    # child.append(root[1])
+    # print(root[1].tag)
+
+
 def getMutations():
-    return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, invalidMultiplyInput, mutateBytes]
+    # return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, invalidMultiplyInput, mutateBytes]
+    return [mutateXML]
     
 def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer
