@@ -102,6 +102,9 @@ def recJson(obj: dict, values: list = [], jsonTemplate: dict = {}, count: int = 
                     newTemplate = {}
                     values, newTemplate, count, tags = recJson(value, values,  newTemplate, count, tags)
                     jsonTemplate[tmpkey].append(newTemplate)
+                elif isinstance(value, list):
+                    newList, jsonTemplate, count, tags = recList(value, values,  jsonTemplate, count, tags)
+                    jsonTemplate[tmpkey].append(newList)
                 else:
                     jsonTemplate[tmpkey].append(count)
                     count = count + 1
@@ -116,8 +119,25 @@ def recJson(obj: dict, values: list = [], jsonTemplate: dict = {}, count: int = 
             values.append(obj[key])
     return values, jsonTemplate, count, tags
 
-def recList(obj: dict, values: list = [], jsonTemplate: dict = {}, count: int = 0, tags: list = []) -> (list, dict):
-    pass
+'''
+Helper function to deal with recursive lists in json files
+'''
+def recList(obj: list, values: list = [], jsonTemplate: dict = {}, count: int = 0, tags: list = []) -> (list, dict):
+    newList = []
+    for value in obj:
+        if isinstance(value, dict):
+            newTemplate = {}
+            values, newTemplate, count, tags = recJson(value, values,  newTemplate, count, tags)
+            newList.append(newTemplate)
+        elif isinstance(value, list):
+            tmpList = recList(value, values,  jsonTemplate, count, tags)
+            newList.append(tmpList)
+        else:
+            newList.append(count)
+            count = count + 1
+            values.append(value)
+    return newList, jsonTemplate, count, tags
+
 
 '''
 Parses the json file to generate input dict for the fuzzer
@@ -132,7 +152,6 @@ def parseJson(pParsed)-> dict:
     # values = []
     # jsonTemplate = {}
     values, jsonTemplate, _, tags = recJson(pParsed)
-    # print({ 'values': values, 'tags': tags, 'template': jsonTemplate, 'file': FileType.JSON })
     return { 'values': values, 'tags': tags, 'template': jsonTemplate, 'file': FileType.JSON }
 
 
@@ -142,7 +161,6 @@ Recursively replace template with values to create valid json input
 @param: values: values dict to be inserted
 '''
 def repJson(tmpl: dict, values: list, tags: list) -> None:
-    print(tmpl, values, tags)
     obj = {}
     for tmpkey in tmpl.keys():
         key = tags[tmpkey]
@@ -152,6 +170,9 @@ def repJson(tmpl: dict, values: list, tags: list) -> None:
                 if isinstance(value, dict):
                     newobj = repJson(value, values, tags)
                     replist.append(newobj)
+                elif isinstance(value, list):
+                    tmpList = repList(value, values, tags)
+                    replist.append(tmpList)
                 else:
                     replist.append(values[value])
             obj[key] = replist
@@ -159,9 +180,25 @@ def repJson(tmpl: dict, values: list, tags: list) -> None:
             newobj = repJson(tmpl[tmpkey], values, tags)
             obj[key] = newobj
         else:
-            print(tmpl[tmpkey])
             obj[key] = values[tmpl[tmpkey]]
     return obj
+
+'''
+Helper function to deal with recursive lists in json
+'''
+def repList(l: list, values: list, tags: list) -> None:
+    newList = []
+    for value in l:
+        if isinstance(value, dict):
+            newobj = repJson(value, values, tags)
+            newList.append(newobj)
+        elif isinstance(value, list):
+            tmpList = repList(value, values, tags)
+            newList.append(tmpList)
+        else:
+            newList.append(values[value])
+    return newList
+
 
 '''
 Reconstructs valid json input to pass into the binary
@@ -170,9 +207,7 @@ Reconstructs valid json input to pass into the binary
 def reconstructJson(fuzzed: dict) -> bytes:
     # obj = copy.deepcopy(fuzzed['template'])
     values = fuzzed['values']
-    print("\n\n\n" + str(values) + "\n\n\n")
     obj = repJson(fuzzed['template'], values, fuzzed['tags'])
-    print("obj: " + str(obj))
     return json.dumps(obj, ensure_ascii=False).encode()
     # I don't think ensure_ascii is actually doing anything
 
