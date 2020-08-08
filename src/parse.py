@@ -98,9 +98,14 @@ def recJson(obj: dict, values: list = [], jsonTemplate: dict = {}, count: int = 
         if isinstance(obj[key], list):
             jsonTemplate[tmpkey] = []
             for value in obj[key]:
-                jsonTemplate[tmpkey].append(count)
-                count = count + 1
-                values.append(value)
+                if isinstance(value, dict):
+                    newTemplate = {}
+                    values, newTemplate, count, tags = recJson(value, values,  newTemplate, count, tags)
+                    jsonTemplate[tmpkey].append(newTemplate)
+                else:
+                    jsonTemplate[tmpkey].append(count)
+                    count = count + 1
+                    values.append(value)
         elif isinstance(obj[key], dict):
             newTemplate = {}
             values, newTemplate, count, tags = recJson(obj[key], values,  newTemplate, count, tags)
@@ -144,7 +149,11 @@ def repJson(tmpl: dict, values: list, tags: list) -> None:
         if isinstance(tmpl[tmpkey], list):
             replist = []
             for value in tmpl[tmpkey]:
-                replist.append(values[value])
+                if isinstance(value, dict):
+                    newobj = repJson(value, values, tags)
+                    replist.append(newobj)
+                else:
+                    replist.append(values[value])
             obj[key] = replist
         elif isinstance(tmpl[tmpkey], dict):
             newobj = repJson(tmpl[tmpkey], values, tags)
@@ -163,6 +172,7 @@ def reconstructJson(fuzzed: dict) -> bytes:
     values = fuzzed['values']
     print("\n\n\n" + str(values) + "\n\n\n")
     obj = repJson(fuzzed['template'], values, fuzzed['tags'])
+    print("obj: " + str(obj))
     return json.dumps(obj, ensure_ascii=False).encode()
     # I don't think ensure_ascii is actually doing anything
 
