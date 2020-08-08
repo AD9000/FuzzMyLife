@@ -102,12 +102,17 @@ def recJson(obj: dict, values: list = [], jsonTemplate: dict = {}, count: int = 
                 count = count + 1
                 values.append(value)
         elif isinstance(obj[key], dict):
-            values, jsonTemplate, count, tags = recJson(obj[key], values, jsonTemplate, tags)
+            newTemplate = {}
+            values, newTemplate, count, tags = recJson(obj[key], values,  newTemplate, count, tags)
+            jsonTemplate[tmpkey] = newTemplate
         else:
             jsonTemplate[tmpkey] = count
             count = count + 1
             values.append(obj[key])
     return values, jsonTemplate, count, tags
+
+def recList(obj: dict, values: list = [], jsonTemplate: dict = {}, count: int = 0, tags: list = []) -> (list, dict):
+    pass
 
 '''
 Parses the json file to generate input dict for the fuzzer
@@ -132,7 +137,7 @@ Recursively replace template with values to create valid json input
 @param: values: values dict to be inserted
 '''
 def repJson(tmpl: dict, values: list, tags: list) -> None:
-    # print(tmpl, values, tags)
+    print(tmpl, values, tags)
     obj = {}
     for tmpkey in tmpl.keys():
         key = tags[tmpkey]
@@ -142,10 +147,11 @@ def repJson(tmpl: dict, values: list, tags: list) -> None:
                 replist.append(values[value])
             obj[key] = replist
         elif isinstance(tmpl[tmpkey], dict):
-            repJson(tmpl[tmpkey], values, tags)
+            newobj = repJson(tmpl[tmpkey], values, tags)
+            obj[key] = newobj
         else:
+            print(tmpl[tmpkey])
             obj[key] = values[tmpl[tmpkey]]
-    # print(obj)
     return obj
 
 '''
@@ -155,6 +161,7 @@ Reconstructs valid json input to pass into the binary
 def reconstructJson(fuzzed: dict) -> bytes:
     # obj = copy.deepcopy(fuzzed['template'])
     values = fuzzed['values']
+    print("\n\n\n" + str(values) + "\n\n\n")
     obj = repJson(fuzzed['template'], values, fuzzed['tags'])
     return json.dumps(obj, ensure_ascii=False).encode()
     # I don't think ensure_ascii is actually doing anything
