@@ -345,7 +345,7 @@ def emptyFile(inputDict: dict):
     sendBuffer.put(b',,,')
 
 def getMutations():
-    return [mutateValues, mutateCSV, multiplyXML, deepXML, multiplyJSON, longJSONList, invalidMultiplyInput, emptyFile, mutateBytes]
+    return [mutateValues, mutateCSV, multiplyXML, deepXML, multiplyJSON, longJSONList, invalidMultiplyInput, emptyFile, mutateXML, mutateBytes]
     
 def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer
