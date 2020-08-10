@@ -44,7 +44,7 @@ if __name__ == "__main__":
     
     # run once with sample input to get runtime. timeout = 5+runtime
     # might be pointless because all the sample binaries run in << 1 second anyway
-    t = timeit.timeit(stmt=f"subprocess.call('{binary}', stdin=fp)", setup=f"import subprocess; fp=open('{inputFileName}', 'rb')", number=1)
+    t = timeit.timeit(stmt=f"sp.call('{binary}', stdin=fp, stdout=sp.DEVNULL, stderr=sp.DEVNULL)", setup=f"import subprocess as sp; fp=open('{inputFileName}', 'rb')", number=1)
     logger.info(f"runtime: {t}")
     runtime = math.ceil(t)
 

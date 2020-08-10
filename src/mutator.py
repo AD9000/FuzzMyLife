@@ -262,6 +262,21 @@ def mutateXML(inputDict: dict):
 
 def getMutations():
     return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, invalidMultiplyInput, mutateXML, mutateBytes]
+
+def emptyFile(inputDict: dict):
+    sendBuffer.put(b'')
+    sendBuffer.put(b'{}')
+    sendBuffer.put(b'<>')
+    sendBuffer.put(b',')
+    sendBuffer.put(b' ')
+    sendBuffer.put(b'{ }')
+    sendBuffer.put(b'< >')
+    sendBuffer.put(b', ')
+    sendBuffer.put(b'\n'*100)
+    sendBuffer.put(b',,,')
+
+def getMutations():
+    return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, invalidMultiplyInput, emptyFile, mutateBytes]
     
 def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer
