@@ -16,7 +16,7 @@ from typing import List
 
 intcases = [0, 2**31-1, -2**31, 2**32-1, -(2**32-1), 10*2**20, -10*2**20, 10*2**30, -10*2**30]
 intcases.extend(f(i) for i in range(21) for f in (lambda x: 2**x, lambda x: -2**x))
-#:)
+
 overflowcases = ["A"*(2**i) for i in range(2,15)]
 stringcases = ["\'", "\"", "\\", " ", "\n", "`", ",", "/", "", "\0", "ふ", "😠", "🐨", "}", ";", "X "*10, "\x08"] # "{" breaks Python's xml parser
 stringcases.extend([" ".join(stringcases)])
@@ -24,7 +24,6 @@ formatcases = ["%n"*10, "%n"*100, "%1000000$x"]
 
 allcases = [*intcases, *overflowcases, *stringcases, *formatcases]
 
-# what is start for
 def mutateValues(inputDict: dict, start=0):
     logger.info('Running: Mutate values...')
     if start > len(inputDict['values']):
@@ -44,7 +43,6 @@ def mutateValues(inputDict: dict, start=0):
 
                 inputDict[fieldType][i] = case
                 sendBuffer.put(parse.getInputFromDict(inputDict))
-                # logger.debug(parse.getInputFromDict(inputDict))
 
             inputDict[fieldType][i] = tmp
 
@@ -53,7 +51,6 @@ def mutateCSV(inputDict: dict):
         return
     logger.info('Running: Multiply CSV...')
     
-
     csvMutateCpl(copy.deepcopy(inputDict))
 
     for i in range(4):
@@ -116,8 +113,6 @@ def mutateBytes(inputDict: dict):
             insertpayload = inputBytes + byte.to_bytes(1, 'little')
         sendBuffer.put(replacepayload)
         sendBuffer.put(insertpayload)
-        if not crashBuffer.empty(): 
-            return
 
 def multiplyJSON(inputDict: dict, repeatTimes: int=15):
     if inputDict.get('file') != FileType.JSON:
@@ -127,7 +122,7 @@ def multiplyJSON(inputDict: dict, repeatTimes: int=15):
     rawJson = parse.getInputFromDict(inputDict)
     jsonObj = json.loads(rawJson)
     multiplier = 1
- 
+
     for _ in range(repeatTimes):
         multiplier *= 2
         inputString = json.dumps([jsonObj] * multiplier)
@@ -143,7 +138,6 @@ def multiplyXML(inputDict: dict, maxMultiplier: int = 15):
     root = rawXml.getroot()
     newRoot = copy.deepcopy(root)
 
-    # at 2^15, the xml input is already 10Mb long 
     for _ in range(maxMultiplier):
         multiplier *= 2
         newRoot.extend(list(root) * multiplier)
@@ -226,7 +220,6 @@ def longJSONList(inputDict: dict, maxMultiplier: int = 20):
                 inputObj[key].append("B")
             inputObj[key].extend(inputObj[key])
             sendBuffer.put(json.dumps(inputObj).encode())
-
 
 def invalidMultiplyInput(inputDict: dict, repeatTimes: int = 15):
     logger.info('Running: Syntax-less multiply...')

@@ -21,7 +21,6 @@ def sendPayload(sendBuffer: Queue, crashBuffer: Queue, timeout: int):
 
         if (error):
             logger.debug(output)
-            # logger.error(error)
 
         if ret == -11:
             crashBuffer.put(testInput)
@@ -45,14 +44,13 @@ def mutate(inputDict: dict, mutation) -> str:
 def fuzzMyLife(inputDict: dict, runtime: int) -> str:
     mutator.setBuffers(sendBuffer, crashBuffer)
 
-    num_senders = multiprocessing.cpu_count() * 2
-    senders = [Thread(target=sendPayload, args=([sendBuffer, crashBuffer, 7+runtime])) for i in range(num_senders)]
+    num_senders = multiprocessing.cpu_count() * 3
+    senders = [Thread(target=sendPayload, args=([sendBuffer, crashBuffer, 10+runtime])) for i in range(num_senders)]
     for sender in senders:
         sender.start()
 
     mutations = mutator.getMutations()
     for mutation in mutations:
-        # logger.debug(mutation.__name__)
         mutatorThread = Thread(target=mutate, args=([inputDict, mutation]))
         mutatorThread.start()
 
