@@ -208,7 +208,6 @@ def longJSONList(inputDict: dict, maxMultiplier: int = 20):
             if len(inputObj[key]) == 0:
                 inputObj[key].append("B")
             inputObj[key].extend(inputObj[key])
-            print(inputObj)
             sendBuffer.put(json.dumps(inputObj).encode())
 
 
