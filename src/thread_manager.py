@@ -31,7 +31,7 @@ def sendWithOutput(inputBytes: bytes, timeout: int) -> (int, str, str):
     try:
         output, error = p.communicate(inputBytes, timeout=timeout)
     except TimeoutExpired:
-        print('kill')
+        logger.debug('kill')
         p.kill()
         output, error = p.communicate()
 
@@ -52,7 +52,7 @@ def fuzzMyLife(inputDict: dict, runtime: int) -> str:
 
     mutations = mutator.getMutations()
     for mutation in mutations:
-        # logger.info(mutation.__name__)
+        # logger.debug(mutation.__name__)
         mutatorThread = Thread(target=mutate, args=([inputDict, mutation]))
         mutatorThread.start()
 

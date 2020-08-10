@@ -69,7 +69,7 @@ then
         crashfile="`echo "$input" | sed "s!$replacer!!" | cut -c2-`"
 
         binName="`echo "$crashfile" | sed s/\.txt//`"
-        logfile="$binName.log.txt"
+        logfile="$binName.log"
 
         $ROOT_DIR/src/fuzzer "$binary" "$input" -d --logfile $uuid/$logfile --crashfile $uuid/$crashfile
     fi
@@ -89,7 +89,9 @@ else
     crashfile="`echo "$input" | sed "s!$replacer!!" | cut -c2-`"
 
     binName="`echo "$crashfile" | sed s/\.txt//`"
-    logfile="$binName.log.txt"
+    logfile="$binName.log"
+
+    crashfile="`echo "$crashfile" | sed s/\.txt/\.crash/`"
 
     $ROOT_DIR/src/fuzzer $1 $2 -d --logfile $uuid/$logfile --crashfile $uuid/$crashfile
 fi
