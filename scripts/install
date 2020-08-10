@@ -24,10 +24,12 @@ chmod +x "$ROOT_DIR/scripts/fuzzAllBinaries"
 chmod +x "$ROOT_DIR/src/fuzzer"
 chmod +x "$ROOT_DIR/scripts/uninstall"
 chmod +x "$ROOT_DIR/scripts/makeSubmission"
+chmod +x "$ROOT_DIR/scripts/testlogs"
 
 # The aliases you should use
 echo "alias fuzz="$ROOT_DIR/scripts/runFuzzer"" >> ~/.bash_aliases
 echo "alias fuzzAll="$ROOT_DIR/scripts/fuzzAllBinaries"" >> ~/.bash_aliases
+echo "alias testLogs="$ROOT_DIR/scripts/testlogs"" >> ~/.bash_aliases
 
 # Raw fuzzer alias
 echo "alias fml="$ROOT_DIR/src/fuzzer"" >> ~/.bash_aliases
