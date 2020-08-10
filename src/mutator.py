@@ -160,11 +160,26 @@ def deepXML(inputDict: dict, maxMultiplier: int = 20):
     parent, child = [None, None]
     root = tree
     while (True):
-        parent, child, *_ = root.iter()
-        if len(child) == 0:
-            break
+        try:
+            children = list(root.iter())
+            if (len(children) < 2):
+                # should only be one
+                parent = children[0]
+                child = parent
+            else:
+                parent = children[0]
+                child = children[1]
+                
+            if len(child) == 0:
+                break
 
-        root = child
+            root = child
+        except Exception as e:
+            logger.debug("DeepXML error: " + str(e))
+            return
+        except:
+            logger.debug("Unknown exception in deepXML")
+            return
 
     # getting the raw xml tag
     # by adding to child once
