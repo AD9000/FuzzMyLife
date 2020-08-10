@@ -304,7 +304,6 @@ def getDictFromInput(inputFileName: str) -> dict:
     fileType, pparsed = classifyFile(inputFileName)
     logger.debug(fileType)
     a = parsers[fileType](pparsed)
-    print(a)
     return a
 
 '''
