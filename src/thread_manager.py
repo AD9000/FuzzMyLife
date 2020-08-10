@@ -46,7 +46,7 @@ def fuzzMyLife(inputDict: dict, runtime: int) -> str:
     mutator.setBuffers(sendBuffer, crashBuffer)
 
     num_senders = multiprocessing.cpu_count() * 2
-    senders = [Thread(target=sendPayload, args=([sendBuffer, crashBuffer, 5+runtime])) for i in range(num_senders)]
+    senders = [Thread(target=sendPayload, args=([sendBuffer, crashBuffer, 7+runtime])) for i in range(num_senders)]
     for sender in senders:
         sender.start()
 
@@ -58,7 +58,7 @@ def fuzzMyLife(inputDict: dict, runtime: int) -> str:
 
         mutatorThread.join()
 
-    for i in range(num_senders):
+    for _ in range(num_senders):
         sendBuffer.put(None)
 
     for sender in senders:
