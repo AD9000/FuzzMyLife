@@ -185,6 +185,37 @@ def sendXML(root):
     print()
     sendBuffer.put(ET.tostring(root))
 
+def mutateXMLR(nodes: list, root, rem: int = 2):
+    count = 0
+    for src in random.sample(nodes.keys(), len(nodes.keys())):
+        # move to be the child of any other valid node
+        validDstNodes = list(removeNode(nodes.copy(), src))
+        if validDstNodes != []:
+            dst = random.choice(validDstNodes)
+            # print(dst)
+            parent = nodes[src]
+            dst.append(src)
+            nodes[src] = dst # set new parent
+            print(src)
+            print(parent)
+            print(list(parent))
+            sys.stdout.buffer.write(ET.tostring(root))
+            parent.remove(src)
+            print(nodes)
+            print(nodes[src])
+            print(src)
+            print()
+            if random.randint(0, 1) == 0 and rem > 0:
+                count += mutateXMLR(nodes, root, rem-1)
+            else:
+                count += 1
+                sendXML(root)
+            dst.remove(src)
+            parent.append(src)
+            nodes[src] = parent
+    return count
+
+
 def mutateXML(inputDict: dict):
     # root = inputDict['template']
     root = ET.ElementTree(ET.fromstring(parse.getInputFromDict(inputDict))).getroot()
@@ -198,15 +229,34 @@ def mutateXML(inputDict: dict):
     # the randomness is pointless because am trying all anyway and would need an insanely huge xml for that to take 3 mins
     for src in random.sample(nodes.keys(), len(nodes.keys())):
         # print(src)
-        # print(list(removeNode(nodes.copy(), src).keys()))
+        # try with node removed
+        nodes[src].remove(src)
+        sendXML(root)
+        # mutateXMLR(nodes, root)
+        nodes[src].append(src) # removing and adding back changes the order but w/e
+
+        # move to be the child of any other valid node
         validDstNodes = list(removeNode(nodes.copy(), src))
         for dst in random.sample(validDstNodes, len(validDstNodes)):
             # print(dst)
+            parent = nodes[src]
             dst.append(src)
-            nodes[src].remove(src)
+            nodes[src] = dst # set new parent
+            parent.remove(src) # remove from old parent
+            print(nodes)
+            print(nodes[src])
+            print(src)
+            print()
             sendXML(root)
+            c = mutateXMLR(nodes, root)
+            print(c)
             dst.remove(src)
-            nodes[src].append(src)
+            parent.append(src)
+            nodes[src] = parent
+
+    """
+    
+    """
 
 
 
