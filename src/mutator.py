@@ -10,14 +10,11 @@ from log import *
 
 import random
 import sys
-# import collections
-# from typing import List, Tuple
+import collections
+from typing import List
 
 
 intcases = [0, 2**31-1, -2**31, 2**32-1, -(2**32-1), 10*2**20, -10*2**20, 10*2**30, -10*2**30]
-# someone pls turn this into a beautiful one-line list comprehension
-# for i in range(0, 21):
-#     intcases.extend([2**i, -2**i])
 intcases.extend(f(i) for i in range(21) for f in (lambda x: 2**x, lambda x: -2**x))
 #:)
 overflowcases = ["A"*(2**i) for i in range(2,15)]
@@ -38,7 +35,6 @@ def mutateValues(inputDict: dict, start=0):
         if fieldType not in inputDict:
             continue
         for i in range(start, len(inputDict[fieldType])):
-            # testcases = [inputDict[j][i]] # how did noone realise that when we are testing one field at a time this just tests the sample input
             testcases = allcases
 
             tmp = inputDict[fieldType][i]
@@ -48,7 +44,6 @@ def mutateValues(inputDict: dict, start=0):
 
                 inputDict[fieldType][i] = case
                 sendBuffer.put(parse.getInputFromDict(inputDict))
-                # print(parse.getInputFromDict(inputDict))
 
             inputDict[fieldType][i] = tmp
 
@@ -88,7 +83,7 @@ def csvMutateCpl(inputDict: dict):
 # then more
 # if its short, we'll have time to get through all cases
 # if long, we will have tested a variety of places
-# actually I'm going through every case, but in random order. that should achieve the above as well.
+# I'm going through every case, but in random order. that should achieve the above distribution.
 bcases = [x for x in range(0xff+1)]
 
 def mutateBytes(inputDict: dict):
@@ -98,7 +93,6 @@ def mutateBytes(inputDict: dict):
     random.shuffle(cases)
     removes = []
     for case in cases:
-        # print(case)
         index = case[0]
         byte = case[1]
         if inputBytes[index] == b'\n' and inputDict['file'] in [FileType.PLAINTEXT, FileType.CSV]:
@@ -114,12 +108,12 @@ def mutateBytes(inputDict: dict):
             # replace byte
             replacepayload = inputBytes[:index] + byte.to_bytes(1, 'little') + inputBytes[index+1:]
             # insert byte
-            # insertpayload = inputBytes[:i] + case.to_bytes(1, 'little') + inputBytes[i:]
+            insertpayload = inputBytes[:index] + byte.to_bytes(1, 'little') + inputBytes[index:]
         else:
             replacepayload = inputBytes[:index] + byte.to_bytes(1, 'little')
-            # insertpayload = inputBytes + case.to_bytes(1, 'little')
+            insertpayload = inputBytes + byte.to_bytes(1, 'little')
         sendBuffer.put(replacepayload)
-        # sendBuffer.put(insertpayload)
+        sendBuffer.put(insertpayload)
         # if not crashBuffer.empty(): return # should do this or no? It's slow I think.
 
 def multiplyJSON(inputDict: dict, repeatTimes: int=15):
@@ -163,131 +157,113 @@ def invalidMultiplyInput(inputDict: dict, repeatTimes: int = 15):
         inputString = rawInput * multiplier
         sendBuffer.put(inputString)
 
-# Node = collections.namedtuple('Node', 'node parent')
-# return list of Nodes
+# return dict of Nodes: node: [parents]
 def findXMLNodes(root, nodes: dict = {}) -> dict:
-    # print(root, nodes)
     for child in root:
-        nodes[child] = root
+        nodes[child] = [root]
         nodes = findXMLNodes(child, nodes)
-        # print(nodes)
     return nodes
 
 # return new nodes list with node and all its children removed
 def removeNode(nodes: dict, node) -> dict:
-    nodes.pop(node)
+    if node in nodes:
+        nodes.pop(node)
     for child in node:
         nodes = removeNode(nodes, child)
-    return nodes
+    return nodes;
 
 def sendXML(root):
+    # remove prints after tested
+    print('\n================\n')
     sys.stdout.buffer.write(ET.tostring(root))
-    print()
+    print('\n================\n')
     sendBuffer.put(ET.tostring(root))
 
-def mutateXMLR(nodes: list, root, rem: int = 2):
-    count = 0
-    for src in random.sample(nodes.keys(), len(nodes.keys())):
+Change = collections.namedtuple('Change', 'src dst parent')
+
+def addChange(changesstack: List[Change], src, dst, nodes: dict, removeParent = False):
+    if removeParent == False: # don't delete old parent - its a copy not a move
+        changesstack.extend([Change(src, dst, None)])
+        dst.append(src)
+        nodes[src].append(dst)
+    else:
+        parent = nodes[src].pop()
+        changesstack.extend([Change(src, dst, parent)])
+        dst.append(src)
+        nodes[src].append(dst)
+        parent.remove(src)
+
+def popChange(changesstack: List[Change], nodes: dict):
+    change = changesstack.pop()
+    change.dst.remove(change.src)
+    nodes[change.src].pop()
+    if change.parent is not None:
+        change.parent.append(change.src)
+        nodes[change.src].append(change.parent)
+
+def popAllChanges(changesstack, nodes: dict):
+    while changesstack != []:
+        popChange(changesstack, nodes)
+
+def mutationsXML(nodes: dict, root):
+    changesstack = []
+    
+    i = 0
+    while i < 100:
+        src = random.choice(list(nodes))
         # move to be the child of any other valid node
         validDstNodes = list(removeNode(nodes.copy(), src))
-        if validDstNodes != []:
-            dst = random.choice(validDstNodes)
-            # print(dst)
-            parent = nodes[src]
-            dst.append(src)
-            nodes[src] = dst # set new parent
-            print(src)
-            print(parent)
-            print(list(parent))
-            sys.stdout.buffer.write(ET.tostring(root))
-            parent.remove(src)
-            print(nodes)
-            print(nodes[src])
-            print(src)
-            print()
-            if random.randint(0, 1) == 0 and rem > 0:
-                count += mutateXMLR(nodes, root, rem-1)
-            else:
-                count += 1
-                sendXML(root)
-            dst.remove(src)
-            parent.append(src)
-            nodes[src] = parent
-    return count
+        if validDstNodes == []:
+            popChange(changesstack, nodes)
+            # now what? continue but don't count this as an iteration
+            continue
 
+        dst = random.choice(validDstNodes)
+        if random.randint(0, 1) == 0:
+            addChange(changesstack, src, dst, nodes) # copy
+        else:
+            addChange(changesstack, src, dst, nodes, removeParent=True) # move
+        sys.stdout.buffer.write(ET.tostring(root))
+        sendXML(root)
+        if random.randint(0, 4) == 0: # 25% chance to make new mutation, 75% chance to continue this one
+            popAllChanges(changesstack, nodes)
+        i += 1
+    popAllChanges(changesstack, nodes)
 
 def mutateXML(inputDict: dict):
-    # root = inputDict['template']
+    if inputDict.get('file') != FileType.XML:
+        return
+    logger.info('mutate XML')
+
     root = ET.ElementTree(ET.fromstring(parse.getInputFromDict(inputDict))).getroot()
-    print(type(root))
-    print(len(root))
 
     nodes = findXMLNodes(root)
-    print(nodes)
 
     # choose a random node, move it to be child of another random node that isn't one of its children
     # the randomness is pointless because am trying all anyway and would need an insanely huge xml for that to take 3 mins
     for src in random.sample(nodes.keys(), len(nodes.keys())):
-        # print(src)
         # try with node removed
-        nodes[src].remove(src)
+        sys.stdout.buffer.write(ET.tostring(root))
+        nodes[src][-1].remove(src)
         sendXML(root)
-        # mutateXMLR(nodes, root)
-        nodes[src].append(src) # removing and adding back changes the order but w/e
+        nodes[src][-1].append(src) # removing and adding back changes the order but w/e
 
         # move to be the child of any other valid node
         validDstNodes = list(removeNode(nodes.copy(), src))
         for dst in random.sample(validDstNodes, len(validDstNodes)):
-            # print(dst)
-            parent = nodes[src]
+            parent = nodes[src].pop()
             dst.append(src)
-            nodes[src] = dst # set new parent
+            nodes[src].append(dst) # set new parent
             parent.remove(src) # remove from old parent
-            print(nodes)
-            print(nodes[src])
-            print(src)
-            print()
             sendXML(root)
-            c = mutateXMLR(nodes, root)
-            print(c)
+            mutationsXML(nodes, root)
             dst.remove(src)
             parent.append(src)
-            nodes[src] = parent
-
-    """
-    
-    """
-
-
-
-    # for src in nodes:
-    #     print(src)
-    #     print(list(set(nodes)-set(src)))
-    #     for dest in list(set(nodes)-set(src)):
-    #         # https://stackoverflow.com/questions/2514961/remove-all-values-within-one-list-from-another-list/30353802
-    #         pass
-
-    # for _ in range(0, len(root)-1):
-    #     root[1].append(root[0])
-    #     root.remove(root[0])
-    #     # root[i].append(root[i-1])
-    #     # print(len(root[i]))
-    #     sys.stdout.buffer.write(ET.tostring(root))
-    #     print("\n\n=========\n\n")
-    #     # sendBuffer.put(ET.tostring(root))
-    #     # root[i][len(root[i])-1].append(root[max(0, i-1)])
-
-
-
-    # child = root[0]
-    # print(child.tag)
-    # child.append(root[1])
-    # print(root[1].tag)
-
+            nodes[src].remove(dst)
+            nodes[src].append(parent)
 
 def getMutations():
-    # return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, invalidMultiplyInput, mutateBytes]
-    return [mutateXML]
+    return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, invalidMultiplyInput, mutateXML, mutateBytes]
     
 def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer

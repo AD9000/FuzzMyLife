@@ -7,11 +7,6 @@ import copy
 from log import *
 from fileTypes import *
 
-# count = 0
-# xmlTemplate = None
-# jsonTemplate = {}
-# Values can probably be removed but for now it used for debugging
-# values = []
 '''
 gives file extension: txt, json => FileType
 '''
@@ -87,11 +82,7 @@ def reconstructCsv(fuzzed: dict) -> bytes:
 Recursively parse json and generate template to be used for reconstruction 
 @param: obj: valid json to be parsed
 '''
-# can't deal with lists of dictionaries
 def recJson(obj: dict, values: list = [], jsonTemplate: dict = {}, count: int = 0, tags: list = []) -> (list, dict):
-    # global jsonTemplate
-    # global count
-    # global values
     for key in obj.keys():
         tags.append(key)
         tmpkey = len(tags)-1
@@ -115,14 +106,7 @@ Parses the json file to generate input dict for the fuzzer
 '''
 def parseJson(pParsed)-> dict:
     logger.debug(pParsed)
-    # global jsonTemplate
-    # global values
-    # global count
-    # count = 0
-    # values = []
-    # jsonTemplate = {}
     values, jsonTemplate, _, tags = recJson(pParsed)
-    # print({ 'values': values, 'tags': tags, 'template': jsonTemplate, 'file': FileType.JSON })
     return { 'values': values, 'tags': tags, 'template': jsonTemplate, 'file': FileType.JSON }
 
 
@@ -132,7 +116,6 @@ Recursively replace template with values to create valid json input
 @param: values: values dict to be inserted
 '''
 def repJson(tmpl: dict, values: list, tags: list) -> None:
-    # print(tmpl, values, tags)
     obj = {}
     for tmpkey in tmpl.keys():
         key = tags[tmpkey]
@@ -145,7 +128,6 @@ def repJson(tmpl: dict, values: list, tags: list) -> None:
             repJson(tmpl[tmpkey], values, tags)
         else:
             obj[key] = values[tmpl[tmpkey]]
-    # print(obj)
     return obj
 
 '''
@@ -214,13 +196,9 @@ Parses the xml file to generate input dict for the fuzzer
 @param: pParsed: Partially parsed input from classifyFile()
 '''
 def parseXml(pParsed) -> dict:
-    # global xmlTemplate
-    # global count
     root = pParsed.getroot()
     values, _, tags = recXml(root)
-    # print(tags)
     xmlTemplate = root
-    # count = 0
     return {'values': values, 'tags': tags, 'template': xmlTemplate, 'file': FileType.XML }
 
 
