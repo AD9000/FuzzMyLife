@@ -227,10 +227,10 @@ Recursively parse xml and generate template to be used for fuzzing & reconstruct
 def recXml(root, values: list = [], vcount: int = 0, tags: list = []) -> (list, int, list):
     tags.append(root.tag)
     root.tag = str(len(tags)-1)
-    # print(root.tag)
+    # logger.debug(root.tag)
 
     for child in root:
-        # print(child.tag, child.attrib, child.text)
+        # logger.debug(child.tag, child.attrib, child.text)
         if len(child.attrib) > 0:
             replace = {}
             for key in dict(child.attrib).keys():
@@ -253,7 +253,7 @@ Parses the xml file to generate input dict for the fuzzer
 def parseXml(pParsed) -> dict:
     root = pParsed.getroot()
     values, _, tags = recXml(root)
-    # print(tags)
+    # logger.debug(tags)
     xmlTemplate = root
     return {'values': values, 'tags': tags, 'template': xmlTemplate, 'file': FileType.XML }
 
@@ -265,16 +265,16 @@ Recursively replace template with values to create valid xml input
 '''
 def repXml(root, values, tags) -> None:
     root.tag = str(tags[int(root.tag)])
-    # print(root.tag)
+    # logger.debug(root.tag)
     for child in root:
-        # print(child.tag, child.attrib)
+        # logger.debug(child.tag, child.attrib)
         # child.attrib is a dictionary where each field contains the values index of its new value
         if len(child.attrib) > 0:
             replace = {}
             for key in dict(child.attrib).keys():
                 replace[values[int(key)]] = values[int(dict(child.attrib)[key])]
             child.attrib = replace
-            # print(child.attrib)
+            # logger.debug(child.attrib)
         if child.text is not None and "\n      " not in child.text:
             child.text = values[int(child.text)]
         repXml(child, values, tags)
@@ -305,7 +305,7 @@ def getDictFromInput(inputFileName: str) -> dict:
     fileType, pparsed = classifyFile(inputFileName)
     logger.debug(fileType)
     a = parsers[fileType](pparsed)
-    print(a)
+    logger.debug(a)
     return a
 
 '''

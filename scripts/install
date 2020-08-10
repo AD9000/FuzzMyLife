@@ -23,6 +23,7 @@ chmod +x "$ROOT_DIR/scripts/runFuzzer"
 chmod +x "$ROOT_DIR/scripts/fuzzAllBinaries"
 chmod +x "$ROOT_DIR/src/fuzzer"
 chmod +x "$ROOT_DIR/scripts/uninstall"
+chmod +x "$ROOT_DIR/scripts/makeSubmission"
 
 # The aliases you should use
 echo "alias fuzz="$ROOT_DIR/scripts/runFuzzer"" >> ~/.bash_aliases
@@ -31,6 +32,9 @@ echo "alias fuzzAll="$ROOT_DIR/scripts/fuzzAllBinaries"" >> ~/.bash_aliases
 # Raw fuzzer alias
 echo "alias fml="$ROOT_DIR/src/fuzzer"" >> ~/.bash_aliases
 echo "alias uninstallFuzz="$ROOT_DIR/scripts/uninstall"" >> ~/.bash_aliases
+
+# Submission alias
+echo "alias makeSubmission="$ROOT_DIR/scripts/makeSubmission"" >> ~/.bash_aliases
 
 echo "Done. Restart/Open new terminal for the changes to take effect"
 echo "Run fuzzer in debug mode with fuzz"
