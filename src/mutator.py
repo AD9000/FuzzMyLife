@@ -160,8 +160,21 @@ def invalidMultiplyInput(inputDict: dict, repeatTimes: int = 15):
         inputString = rawInput * multiplier
         sendBuffer.put(inputString)
 
+def emptyFile(inputDict: dict):
+    sendBuffer.put(b'')
+    sendBuffer.put(b'{}')
+    sendBuffer.put(b'<>')
+    sendBuffer.put(b',')
+    sendBuffer.put(b' ')
+    sendBuffer.put(b'{ }')
+    sendBuffer.put(b'< >')
+    sendBuffer.put(b', ')
+    sendBuffer.put(b'\n'*100)
+    sendBuffer.put(b',,,')
+
+
 def getMutations():
-    return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, invalidMultiplyInput, mutateBytes]
+    return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, invalidMultiplyInput, emptyFile, mutateBytes]
     
 def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer
