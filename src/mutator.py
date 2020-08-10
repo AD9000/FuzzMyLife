@@ -187,6 +187,31 @@ def deepXML(inputDict: dict, maxMultiplier: int = 20):
         inputString = head + startTag*multiplier + childString + endTag*multiplier + tail
         sendBuffer.put(inputString.encode())
 
+def longJSONList(inputDict: dict, maxMultiplier: int = 20):
+    if (inputDict.get('file') != FileType.JSON):
+        return
+    j = json.loads(parse.getInputFromDict(inputDict))
+    hasList = False
+    listKeys = []
+    for key in j:
+        if isinstance(j[key], list):
+            hasList = True
+            listKeys.append(key)
+    
+    if hasList == False:
+        return
+    
+    logger.info("Running: Long JSON list...")
+    for key in listKeys:
+        inputObj = copy.deepcopy(j)
+        for _ in range(2, maxMultiplier):
+            if len(inputObj[key]) == 0:
+                inputObj[key].append("B")
+            inputObj[key].extend(inputObj[key])
+            print(inputObj)
+            sendBuffer.put(json.dumps(inputObj).encode())
+
+
 def invalidMultiplyInput(inputDict: dict, repeatTimes: int = 15):
     logger.debug('Syntax-less multiply')
     rawInput = parse.getInputFromDict(inputDict)
@@ -211,7 +236,7 @@ def emptyFile(inputDict: dict):
 
 
 def getMutations():
-    return [mutateValues, mutateCSV, multiplyXML, deepXML, multiplyJSON, invalidMultiplyInput, emptyFile, mutateBytes]
+    return [mutateValues, mutateCSV, multiplyXML, deepXML, multiplyJSON, longJSONList, invalidMultiplyInput, emptyFile, mutateBytes]
     
 def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer
