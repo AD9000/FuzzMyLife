@@ -10,6 +10,8 @@ from log import *
 
 import random
 import sys
+# import collections
+# from typing import List, Tuple
 
 
 intcases = [0, 2**31-1, -2**31, 2**32-1, -(2**32-1), 10*2**20, -10*2**20, 10*2**30, -10*2**30]
@@ -161,20 +163,69 @@ def invalidMultiplyInput(inputDict: dict, repeatTimes: int = 15):
         inputString = rawInput * multiplier
         sendBuffer.put(inputString)
 
+# Node = collections.namedtuple('Node', 'node parent')
+# return list of Nodes
+def findXMLNodes(root, nodes: dict = {}) -> dict:
+    # print(root, nodes)
+    for child in root:
+        nodes[child] = root
+        nodes = findXMLNodes(child, nodes)
+        # print(nodes)
+    return nodes
+
+# return new nodes list with node and all its children removed
+def removeNode(nodes: dict, node) -> dict:
+    nodes.pop(node)
+    for child in node:
+        nodes = removeNode(nodes, child)
+    return nodes
+
+def sendXML(root):
+    sys.stdout.buffer.write(ET.tostring(root))
+    print()
+    sendBuffer.put(ET.tostring(root))
+
 def mutateXML(inputDict: dict):
     # root = inputDict['template']
     root = ET.ElementTree(ET.fromstring(parse.getInputFromDict(inputDict))).getroot()
     print(type(root))
     print(len(root))
-    for _ in range(0, len(root)-1):
-        root[1].append(root[0])
-        root.remove(root[0])
-        # root[i].append(root[i-1])
-        # print(len(root[i]))
-        sys.stdout.buffer.write(ET.tostring(root))
-        print("\n\n=========\n\n")
-        sendBuffer.put(ET.tostring(root))
-        # root[i][len(root[i])-1].append(root[max(0, i-1)])
+
+    nodes = findXMLNodes(root)
+    print(nodes)
+
+    # choose a random node, move it to be child of another random node that isn't one of its children
+    # the randomness is pointless because am trying all anyway and would need an insanely huge xml for that to take 3 mins
+    for src in random.sample(nodes.keys(), len(nodes.keys())):
+        # print(src)
+        # print(list(removeNode(nodes.copy(), src).keys()))
+        validDstNodes = list(removeNode(nodes.copy(), src))
+        for dst in random.sample(validDstNodes, len(validDstNodes)):
+            # print(dst)
+            dst.append(src)
+            nodes[src].remove(src)
+            sendXML(root)
+            dst.remove(src)
+            nodes[src].append(src)
+
+
+
+    # for src in nodes:
+    #     print(src)
+    #     print(list(set(nodes)-set(src)))
+    #     for dest in list(set(nodes)-set(src)):
+    #         # https://stackoverflow.com/questions/2514961/remove-all-values-within-one-list-from-another-list/30353802
+    #         pass
+
+    # for _ in range(0, len(root)-1):
+    #     root[1].append(root[0])
+    #     root.remove(root[0])
+    #     # root[i].append(root[i-1])
+    #     # print(len(root[i]))
+    #     sys.stdout.buffer.write(ET.tostring(root))
+    #     print("\n\n=========\n\n")
+    #     # sendBuffer.put(ET.tostring(root))
+    #     # root[i][len(root[i])-1].append(root[max(0, i-1)])
 
 
 
@@ -185,8 +236,8 @@ def mutateXML(inputDict: dict):
 
 
 def getMutations():
-    return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, invalidMultiplyInput, mutateBytes]
-    # return [mutateXML]
+    # return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, invalidMultiplyInput, mutateBytes]
+    return [mutateXML]
     
 def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer
