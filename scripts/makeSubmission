@@ -1,0 +1,136 @@
+#!/bin/bash
+
+# Script to help submit easily
+check="`echo $0 | cut -c1`"
+
+curr_dir=`pwd`
+FILE_PATH=""
+
+if [ $check = '.' ]
+then
+    FILE_PATH="$curr_dir`echo $0 | cut -c2-`"
+elif [ $check = '/' ]
+then
+    FILE_PATH="$0"
+else
+    echo "interesting file path: $curr_dir, $0"
+    exit 1
+fi
+
+SCRIPTS_DIR="`dirname $FILE_PATH`"
+ROOT_DIR="`dirname $SCRIPTS_DIR`"
+
+echo "------------------------------------------------" 
+echo "> Creating tar file..."
+echo "------------------------------------------------" 
+
+# Do stuff in src dir
+cd "$ROOT_DIR"/src/
+
+# Tar file:
+tarfile='fuzzer.tar'
+
+# Create the tar file with .py files
+for file in *.py
+do
+    tar -rvf "$tarfile" "$file"
+done
+
+# add the fuzzer in separately
+tar -rvf "$tarfile" "fuzzer"
+
+
+# Move the tarfile to the current directory
+mv "$tarfile" "$curr_dir" 
+
+# go to current directory
+cd "$curr_dir"
+
+
+####
+
+if [[ "$@" =~ "--notest" ]]; then
+    printf -- "------------------------------------------------\n" 
+    echo "Done."
+    exit 0
+fi
+
+submission=false
+if [[ "$@" =~ "--submit" ]]; then
+    submission=true
+fi
+
+testdir="submissionTest"
+
+# make test directory for testing
+printf -- "\n------------------------------------------------\n" 
+printf "> Making directory $testdir/ for testing...\n"
+printf -- "------------------------------------------------\n" 
+
+mkdir -p "$testdir"
+
+# untar into dir
+tar -xvf "$tarfile" -C "$testdir/"
+
+# cd into and run 
+cd "$testdir"
+
+# create directory to store logs
+mkdir -p "logs"
+
+# Run tests
+printf -- "\n------------------------------------------------\n" 
+echo "> Running tests..."
+printf -- "------------------------------------------------\n" 
+for input in "$ROOT_DIR"/bin/*.txt
+do
+    binary="`echo $input | sed s/\.txt//`"
+    replacer="`dirname "$binary"`"
+    crashfile="`echo "$input" | sed "s!$replacer!!" | cut -c2-`"
+
+    binName="`echo "$crashfile" | sed s/\.txt//`"
+    logfile="$binName.log"
+
+    crashfile="`echo "$crashfile" | sed s/\.txt/\.crash/`"
+
+    printf -- "\nTesting $binName\n"
+    printf -- "------------------------------------------------\n" 
+
+    if $submission; then
+        ./fuzzer "$binary" "$input"
+    else
+        ./fuzzer "$binary" "$input" -d --crashfile "$crashfile" --logfile "$logfile"
+    fi
+done
+
+# move logs back
+mv ../logs/ .
+
+if ! $submission; then
+    # Test that the crashes work:
+    printf -- "\n------------------------------------------------\n" 
+    echo "> Testing crashes..."
+    printf -- "------------------------------------------------\n" 
+
+    for crash in logs/*.crash
+    do
+        binary="$ROOT_DIR/bin/`echo $crash | sed s/\.crash$// | grep -o "/.*" | cut -c2-`"
+
+        echo "Testing $binary..."
+        printf -- "------------------------------------------------\n" 
+        { cat "$crash" | $binary; } &> /dev/null
+
+        if [[ $? -eq 139 ]]; then
+            echo "Program Crashed Successfully. OK"
+        else
+            echo "No crash detected"
+        fi
+        echo ""
+    done
+fi
+
+# Restore path
+cd "$curr_dir"
+
+printf -- "------------------------------------------------\n" 
+echo "Done."

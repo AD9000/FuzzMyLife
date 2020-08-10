@@ -26,7 +26,7 @@ allcases = [*intcases, *overflowcases, *stringcases, *formatcases]
 
 # what is start for
 def mutateValues(inputDict: dict, start=0):
-    logger.info('Mutate values')
+    logger.debug('Mutate values')
     if start > len(inputDict['values']):
         logger.error("value too large")
         return
@@ -44,19 +44,20 @@ def mutateValues(inputDict: dict, start=0):
 
                 inputDict[fieldType][i] = case
                 sendBuffer.put(parse.getInputFromDict(inputDict))
+                # logger.debug(parse.getInputFromDict(inputDict))
 
             inputDict[fieldType][i] = tmp
 
 def mutateCSV(inputDict: dict):
     if inputDict.get('file') != FileType.CSV:
         return
-    logger.info('Multiply CSV')
+    logger.debug('Multiply CSV')
     
 
     csvMutateCpl(copy.deepcopy(inputDict))
 
     for i in range(4):
-        logger.info("+++++++++++ i = {} +++++++++++".format(i))
+        logger.debug("+++++++++++ i = {} +++++++++++".format(i))
 
         currLen = len(inputDict['values'])
         values = copy.deepcopy(inputDict['values'])
@@ -87,12 +88,13 @@ def csvMutateCpl(inputDict: dict):
 bcases = [x for x in range(0xff+1)]
 
 def mutateBytes(inputDict: dict):
-    logger.info('Mutate bytes')
+    logger.debug('Mutate bytes')
     inputBytes = parse.getInputFromDict(inputDict)
     cases = [(i, j) for i in range(len(inputBytes)) for j in range(len(bcases))] # takes ~.2 seconds to generate list for (500, 0x100)
     random.shuffle(cases)
     removes = []
     for case in cases:
+        # logger.debug(case)
         index = case[0]
         byte = case[1]
         if inputBytes[index] == b'\n' and inputDict['file'] in [FileType.PLAINTEXT, FileType.CSV]:
@@ -119,7 +121,7 @@ def mutateBytes(inputDict: dict):
 def multiplyJSON(inputDict: dict, repeatTimes: int=15):
     if inputDict.get('file') != FileType.JSON:
         return
-    logger.info('Multiply JSON')
+    logger.debug('Multiply JSON')
 
     rawJson = parse.getInputFromDict(inputDict)
     jsonObj = json.loads(rawJson)
@@ -133,7 +135,7 @@ def multiplyJSON(inputDict: dict, repeatTimes: int=15):
 def multiplyXML(inputDict: dict, maxMultiplier: int = 15):
     if inputDict.get('file') != FileType.XML:
         return
-    logger.info('Multiply XML')
+    logger.debug('Multiply XML')
     
     rawXml = ET.ElementTree(ET.fromstring(parse.getInputFromDict(inputDict)))
     multiplier = 1
@@ -147,8 +149,45 @@ def multiplyXML(inputDict: dict, maxMultiplier: int = 15):
         inputString = ET.tostring(newRoot)
         sendBuffer.put(inputString)
 
+def deepXML(inputDict: dict, maxMultiplier: int = 20):
+    if (inputDict.get('file') != FileType.XML):
+        return
+
+    tree = ET.fromstring(parse.getInputFromDict(inputDict))
+
+    # finding a leaf node
+    parent, child = [None, None]
+    root = tree
+    while (True):
+        parent, child, *_ = root.iter()
+        if len(child) == 0:
+            break
+
+        root = child
+
+    # getting the raw xml tag
+    # by adding to child once
+    parent = child
+    child = copy.deepcopy(child)
+    parent.append(child)
+
+    # manual parsing go brr
+    treeString = ET.tostring(tree).decode()
+    parentString = ET.tostring(parent).decode()
+    childString = ET.tostring(child).decode()
+
+    head, tail = treeString.split(parentString)
+
+    startTag, endTag = parentString.split(childString)
+
+    multiplier = 1
+    for _ in range(maxMultiplier):
+        multiplier*=2
+        inputString = head + startTag*multiplier + childString + endTag*multiplier + tail
+        sendBuffer.put(inputString.encode())
+
 def invalidMultiplyInput(inputDict: dict, repeatTimes: int = 15):
-    logger.info('Syntax-less multiply')
+    logger.debug('Syntax-less multiply')
     rawInput = parse.getInputFromDict(inputDict)
     multiplier = 1
 
@@ -276,7 +315,7 @@ def emptyFile(inputDict: dict):
     sendBuffer.put(b',,,')
 
 def getMutations():
-    return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, invalidMultiplyInput, emptyFile, mutateBytes]
+    return [mutateValues, mutateCSV, multiplyXML, deepXML, multiplyJSON, invalidMultiplyInput, emptyFile, mutateBytes]
     
 def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer

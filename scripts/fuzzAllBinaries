@@ -20,7 +20,7 @@ SCRIPTS_DIR="`dirname $FILE_PATH`"
 ROOT_DIR="`dirname $SCRIPTS_DIR`"
 
 # Unique directory to store logs
-uuid="`cat /proc/sys/kernel/random/uuid`"
+uuid="`date "+%H:%M:%S_%Y-%m-%d"`"
 
 # create directory
 mkdir -p "$ROOT_DIR"/logs/$uuid
@@ -32,7 +32,9 @@ do
     crashfile="`echo "$input" | sed "s!$replacer!!" | cut -c2-`"
 
     binName="`echo "$crashfile" | sed s/\.txt//`"
-    logfile="$binName.log.txt"
+    logfile="$binName.log"
+
+    crashfile="`echo "$crashfile" | sed s/\.txt/\.crash/`"
 
     "$ROOT_DIR"/src/fuzzer "$binary" "$input" -d --crashfile $uuid/$crashfile --logfile $uuid/$logfile
 done
