@@ -7,11 +7,6 @@ import copy
 from log import *
 from fileTypes import *
 
-# count = 0
-# xmlTemplate = None
-# jsonTemplate = {}
-# Values can probably be removed but for now it used for debugging
-# values = []
 '''
 gives file extension: txt, json => FileType
 '''
@@ -87,11 +82,7 @@ def reconstructCsv(fuzzed: dict) -> bytes:
 Recursively parse json and generate template to be used for reconstruction 
 @param: obj: valid json to be parsed
 '''
-# can't deal with lists of dictionaries
 def recJson(obj: dict, values: list = [], jsonTemplate: dict = {}, count: int = 0, tags: list = []) -> (list, dict):
-    # global jsonTemplate
-    # global count
-    # global values
     for key in obj.keys():
         tags.append(key)
         tmpkey = len(tags)-1
@@ -145,12 +136,6 @@ Parses the json file to generate input dict for the fuzzer
 '''
 def parseJson(pParsed)-> dict:
     logger.debug(pParsed)
-    # global jsonTemplate
-    # global values
-    # global count
-    # count = 0
-    # values = []
-    # jsonTemplate = {}
     values, jsonTemplate, _, tags = recJson(pParsed)
     return { 'values': values, 'tags': tags, 'template': jsonTemplate, 'file': FileType.JSON }
 
@@ -266,13 +251,10 @@ Parses the xml file to generate input dict for the fuzzer
 @param: pParsed: Partially parsed input from classifyFile()
 '''
 def parseXml(pParsed) -> dict:
-    # global xmlTemplate
-    # global count
     root = pParsed.getroot()
     values, _, tags = recXml(root)
     # print(tags)
     xmlTemplate = root
-    # count = 0
     return {'values': values, 'tags': tags, 'template': xmlTemplate, 'file': FileType.XML }
 
 
