@@ -49,10 +49,7 @@ def getSubmissionLogger():
     LOG_DIR = os.path.join(ROOT_DIR, 'logs')
     LOG_PATH = os.path.join(LOG_DIR, 'log.txt')
     CRASH_DIR = ROOT_DIR
-
-    # Create logger if does not exist
-    Path(LOG_DIR).mkdir(parents=True, exist_ok=True)
-
+    
     # Create logger that logs everything
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)

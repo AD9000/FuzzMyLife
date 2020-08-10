@@ -1,5 +1,17 @@
 #!/bin/sh
 
+SUBMISSION_FLAG="--submit"
+
+startTime=`date +%s`
+
+endRun () {
+    endTime="`date +%s`"
+    runTime=$((endTime - startTime))
+    printf -- "------------------------------------------------\n" 
+    echo "Done in $runTime seconds"
+    exit $1
+}
+
 check="`echo $0 | cut -c1`"
 
 curr_dir=`pwd`
@@ -13,18 +25,30 @@ then
     FILE_PATH="$0"
 else
     echo "interesting file path: $curr_dir, $0"
-    exit 1
+    endRun 1
 fi
 
 SCRIPTS_DIR="`dirname $FILE_PATH`"
 ROOT_DIR="`dirname $SCRIPTS_DIR`"
 
-# Unique directory to store logs
-uuid="`date "+%H:%M:%S_%Y-%m-%d"`"
+submission=false
+if [ -n "`echo "$@" | grep -- "$SUBMISSION_FLAG"`" ]; then
+    submission=true
+fi
 
-# create directory
-mkdir -p "$ROOT_DIR"/logs/$uuid
+if ! $submission; then
+    # Unique directory to store logs
+    uuid="`date "+%H:%M:%S_%Y-%m-%d"`"
 
+    # create directory
+    mkdir -p "$ROOT_DIR"/logs/$uuid
+fi
+
+
+# Run tests
+printf -- "------------------------------------------------\n" 
+echo "> Running tests..."
+printf -- "------------------------------------------------\n" 
 for input in "$ROOT_DIR"/bin/*.txt
 do
     binary="`echo $input | sed s/\.txt//`"
@@ -36,5 +60,14 @@ do
 
     crashfile="`echo "$crashfile" | sed s/\.txt/\.crash/`"
 
-    "$ROOT_DIR"/src/fuzzer "$binary" "$input" -d --crashfile $uuid/$crashfile --logfile $uuid/$logfile
+    printf "\nTesting: $binary\n"
+    printf -- "------------------------------------------------\n" 
+
+    if $submission; then
+        "$ROOT_DIR"/src/fuzzer "$binary" "$input"
+    else
+        "$ROOT_DIR"/src/fuzzer "$binary" "$input" -d --crashfile $uuid/$crashfile --logfile $uuid/$logfile
+    fi
 done
+
+endRun 0

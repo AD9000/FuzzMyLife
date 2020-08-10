@@ -21,7 +21,7 @@ if '--crashfile' in sys.argv:
 def handleCrash(crashInput: bytes) -> bool:
     global crashFile
     if crashInput is not None:
-        logger.info("Found crash")
+        logger.info("\nFound crash")
         with open(os.path.join(CRASH_DIR, crashFile), "wb") as badtxt:
             badtxt.write(crashInput)
         logger.info('Bad input written to ' + os.path.join(CRASH_DIR, crashFile))
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     logger.info(f"runtime: {t}")
     runtime = math.ceil(t)
 
-    logger.info('\nStarting fuzzer...')
+    logger.info('\nStarting fuzzer...\n')
 
     crashInput = thread_manager.fuzzMyLife(inputDict, runtime)
     if handleCrash(crashInput):
