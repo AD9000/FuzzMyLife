@@ -172,8 +172,11 @@ def mutateXML(inputDict: dict):
         # root[i].append(root[i-1])
         # print(len(root[i]))
         sys.stdout.buffer.write(ET.tostring(root))
+        print("\n\n=========\n\n")
         sendBuffer.put(ET.tostring(root))
         # root[i][len(root[i])-1].append(root[max(0, i-1)])
+
+
 
     # child = root[0]
     # print(child.tag)
@@ -182,8 +185,8 @@ def mutateXML(inputDict: dict):
 
 
 def getMutations():
-    # return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, invalidMultiplyInput, mutateBytes]
-    return [mutateXML]
+    return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, invalidMultiplyInput, mutateBytes]
+    # return [mutateXML]
     
 def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer
