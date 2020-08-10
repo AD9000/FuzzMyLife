@@ -150,6 +150,43 @@ def multiplyXML(inputDict: dict, maxMultiplier: int = 15):
         inputString = ET.tostring(newRoot)
         sendBuffer.put(inputString)
 
+def deepXML(inputDict: dict, maxMultiplier: int = 20):
+    if (inputDict.get('file') != FileType.XML):
+        return
+
+    tree = ET.fromstring(parse.getInputFromDict(inputDict))
+
+    # finding a leaf node
+    parent, child = [None, None]
+    root = tree
+    while (True):
+        parent, child, *_ = root.iter()
+        if len(child) == 0:
+            break
+
+        root = child
+
+    # getting the raw xml tag
+    # by adding to child once
+    parent = child
+    child = copy.deepcopy(child)
+    parent.append(child)
+
+    # manual parsing go brr
+    treeString = ET.tostring(tree).decode()
+    parentString = ET.tostring(parent).decode()
+    childString = ET.tostring(child).decode()
+
+    head, tail = treeString.split(parentString)
+
+    startTag, endTag = parentString.split(childString)
+
+    multiplier = 1
+    for _ in range(maxMultiplier):
+        multiplier*=2
+        inputString = head + startTag*multiplier + childString + endTag*multiplier + tail
+        sendBuffer.put(inputString.encode())
+
 def invalidMultiplyInput(inputDict: dict, repeatTimes: int = 15):
     logger.debug('Syntax-less multiply')
     rawInput = parse.getInputFromDict(inputDict)
@@ -174,7 +211,7 @@ def emptyFile(inputDict: dict):
 
 
 def getMutations():
-    return [mutateValues, mutateCSV, multiplyXML, multiplyJSON, invalidMultiplyInput, emptyFile, mutateBytes]
+    return [mutateValues, mutateCSV, multiplyXML, deepXML, multiplyJSON, invalidMultiplyInput, emptyFile, mutateBytes]
     
 def setBuffers(_sendBuffer: Queue, _crashBuffer: Queue):
     global sendBuffer
