@@ -20,7 +20,7 @@ SCRIPTS_DIR="`dirname $FILE_PATH`"
 ROOT_DIR="`dirname $SCRIPTS_DIR`"
 
 # Unique directory to store logs
-uuid="`cat /proc/sys/kernel/random/uuid`"
+uuid="`date "+%H:%M:%S_%Y-%m-%d"`"
 
 # create directory
 mkdir -p "$ROOT_DIR"/logs/$uuid
