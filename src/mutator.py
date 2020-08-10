@@ -18,7 +18,7 @@ intcases = [0, 2**31-1, -2**31, 2**32-1, -(2**32-1), 10*2**20, -10*2**20, 10*2**
 intcases.extend(f(i) for i in range(21) for f in (lambda x: 2**x, lambda x: -2**x))
 #:)
 overflowcases = ["A"*(2**i) for i in range(2,15)]
-stringcases = ["\'", "\"", "\\", " ", "\n", "`", ",", "/", "", "\0", "ふ", "😠", "🐨", "}", ";", "X "*10] # "{" breaks Python's xml parser
+stringcases = ["\'", "\"", "\\", " ", "\n", "`", ",", "/", "", "\0", "ふ", "😠", "🐨", "}", ";", "X "*10, "\x08"] # "{" breaks Python's xml parser
 stringcases.extend([" ".join(stringcases)])
 formatcases = ["%n"*10, "%n"*100, "%1000000$x"]
 
@@ -117,7 +117,8 @@ def mutateBytes(inputDict: dict):
             # insertpayload = inputBytes + case.to_bytes(1, 'little')
         sendBuffer.put(replacepayload)
         # sendBuffer.put(insertpayload)
-        # if not crashBuffer.empty(): return # should do this or no? It's slow I think.
+    if not crashBuffer.empty(): 
+        return
 
 def multiplyJSON(inputDict: dict, repeatTimes: int=15):
     if inputDict.get('file') != FileType.JSON:
