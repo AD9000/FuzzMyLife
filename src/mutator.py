@@ -190,18 +190,20 @@ def deepXML(inputDict: dict, maxMultiplier: int = 20):
 def longJSONList(inputDict: dict, maxMultiplier: int = 20):
     if (inputDict.get('file') != FileType.JSON):
         return
+    
+    logger.info("Running: Long JSON list...")
+
     j = json.loads(parse.getInputFromDict(inputDict))
-    hasList = False
     listKeys = []
     for key in j:
         if isinstance(j[key], list):
             hasList = True
             listKeys.append(key)
     
-    if hasList == False:
-        return
+    if len(listKeys) == 0:
+        j["AFDSFDSADSAFDSA"] = ["A"]
+        listKeys.append("AFDSFDSADSAFDSA")
     
-    logger.info("Running: Long JSON list...")
     for key in listKeys:
         inputObj = copy.deepcopy(j)
         for _ in range(2, maxMultiplier):
