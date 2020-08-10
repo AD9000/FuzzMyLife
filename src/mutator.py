@@ -26,7 +26,7 @@ allcases = [*intcases, *overflowcases, *stringcases, *formatcases]
 
 # what is start for
 def mutateValues(inputDict: dict, start=0):
-    logger.debug('Mutate values')
+    logger.info('Running: Mutate values...')
     if start > len(inputDict['values']):
         logger.error("value too large")
         return
@@ -51,7 +51,7 @@ def mutateValues(inputDict: dict, start=0):
 def mutateCSV(inputDict: dict):
     if inputDict.get('file') != FileType.CSV:
         return
-    logger.debug('Multiply CSV')
+    logger.info('Running: Multiply CSV...')
     
 
     csvMutateCpl(copy.deepcopy(inputDict))
@@ -88,7 +88,7 @@ def csvMutateCpl(inputDict: dict):
 bcases = [x for x in range(0xff+1)]
 
 def mutateBytes(inputDict: dict):
-    logger.debug('Mutate bytes')
+    logger.info('Running: Mutate bytes...')
     inputBytes = parse.getInputFromDict(inputDict)
     cases = [(i, j) for i in range(len(inputBytes)) for j in range(len(bcases))] # takes ~.2 seconds to generate list for (500, 0x100)
     random.shuffle(cases)
@@ -121,7 +121,7 @@ def mutateBytes(inputDict: dict):
 def multiplyJSON(inputDict: dict, repeatTimes: int=15):
     if inputDict.get('file') != FileType.JSON:
         return
-    logger.debug('Multiply JSON')
+    logger.info('Running: Multiply JSON...')
 
     rawJson = parse.getInputFromDict(inputDict)
     jsonObj = json.loads(rawJson)
@@ -135,7 +135,7 @@ def multiplyJSON(inputDict: dict, repeatTimes: int=15):
 def multiplyXML(inputDict: dict, maxMultiplier: int = 15):
     if inputDict.get('file') != FileType.XML:
         return
-    logger.debug('Multiply XML')
+    logger.info('Running: Multiply XML...')
     
     rawXml = ET.ElementTree(ET.fromstring(parse.getInputFromDict(inputDict)))
     multiplier = 1
@@ -153,6 +153,7 @@ def deepXML(inputDict: dict, maxMultiplier: int = 20):
     if (inputDict.get('file') != FileType.XML):
         return
 
+    logger.info("Running: Xml depth mutation...")
     tree = ET.fromstring(parse.getInputFromDict(inputDict))
 
     # finding a leaf node
@@ -168,7 +169,7 @@ def deepXML(inputDict: dict, maxMultiplier: int = 20):
             else:
                 parent = children[0]
                 child = children[1]
-                
+
             if len(child) == 0:
                 break
 
@@ -211,7 +212,6 @@ def longJSONList(inputDict: dict, maxMultiplier: int = 20):
     listKeys = []
     for key in j:
         if isinstance(j[key], list):
-            hasList = True
             listKeys.append(key)
     
     if len(listKeys) == 0:
@@ -228,7 +228,7 @@ def longJSONList(inputDict: dict, maxMultiplier: int = 20):
 
 
 def invalidMultiplyInput(inputDict: dict, repeatTimes: int = 15):
-    logger.debug('Syntax-less multiply')
+    logger.info('Running: Syntax-less multiply...')
     rawInput = parse.getInputFromDict(inputDict)
     multiplier = 1
 
@@ -250,13 +250,9 @@ def removeNode(nodes: dict, node) -> dict:
         nodes.pop(node)
     for child in node:
         nodes = removeNode(nodes, child)
-    return nodes;
+    return nodes
 
 def sendXML(root):
-    # remove prints after tested
-    print('\n================\n')
-    sys.stdout.buffer.write(ET.tostring(root))
-    print('\n================\n')
     sendBuffer.put(ET.tostring(root))
 
 Change = collections.namedtuple('Change', 'src dst parent')
@@ -312,7 +308,7 @@ def mutationsXML(nodes: dict, root):
 def mutateXML(inputDict: dict):
     if inputDict.get('file') != FileType.XML:
         return
-    logger.info('mutate XML')
+    logger.info('Running: Mutate XML...')
 
     root = ET.ElementTree(ET.fromstring(parse.getInputFromDict(inputDict))).getroot()
 
