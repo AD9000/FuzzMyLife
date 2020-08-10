@@ -223,7 +223,6 @@ def mutationsXML(nodes: dict, root):
             addChange(changesstack, src, dst, nodes) # copy
         else:
             addChange(changesstack, src, dst, nodes, removeParent=True) # move
-        sys.stdout.buffer.write(ET.tostring(root))
         sendXML(root)
         if random.randint(0, 4) == 0: # 25% chance to make new mutation, 75% chance to continue this one
             popAllChanges(changesstack, nodes)
@@ -243,7 +242,6 @@ def mutateXML(inputDict: dict):
     # the randomness is pointless because am trying all anyway and would need an insanely huge xml for that to take 3 mins
     for src in random.sample(nodes.keys(), len(nodes.keys())):
         # try with node removed
-        sys.stdout.buffer.write(ET.tostring(root))
         nodes[src][-1].remove(src)
         sendXML(root)
         nodes[src][-1].append(src) # removing and adding back changes the order but w/e
