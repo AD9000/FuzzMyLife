@@ -2,8 +2,18 @@
 
 usage() {
     echo "Usage: ./runFuzzer /path/to/binary /path/to/input OR ./runFuzzer <name_of_binary_in_FuzzMyLife/bin_folder"
-    exit 0
+    endRun 0
 }
+
+endRun () {
+    endTime="`date +%s`"
+    runTime=$((endTime - startTime))
+    printf -- "------------------------------------------------\n" 
+    echo "Done in $runTime seconds"
+    exit $1
+}
+
+startTime="`date +%s`"
 
 if [ $# -lt 1 ]; then
     usage
@@ -24,7 +34,7 @@ then
     FILE_PATH="$0"
 else
     echo "interesting file path: $curr_dir, $0"
-    exit 1
+    endRun 1
 fi
 
 SCRIPTS_DIR="`dirname $FILE_PATH`"
@@ -52,11 +62,11 @@ then
     if [ -z "$binary" ]
     then
         echo "could not find binary for: $1"
-        exit 0
+        endRun 0
     elif [ -z "$input" ]
     then
         echo "could not find valid input for: $1 with binary $binary"
-        exit 0
+        endRun 0
     else
         # Unique directory to store logs
         uuid="`date "+%H:%M:%S_%Y-%m-%d"`"
@@ -96,3 +106,4 @@ else
     $ROOT_DIR/src/fuzzer $1 $2 -d --logfile $uuid/$logfile --crashfile $uuid/$crashfile
 fi
 
+endRun 0

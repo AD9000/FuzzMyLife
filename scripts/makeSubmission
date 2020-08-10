@@ -1,6 +1,16 @@
-#!/bin/bash
+#!/bin/sh
 
 # Script to help submit easily
+startTime="`date +%s`"
+
+endRun () {
+    endTime="`date +%s`"
+    runTime=$((endTime - startTime))
+    printf -- "------------------------------------------------\n" 
+    echo "Done in $runTime seconds"
+    exit $1
+}
+
 check="`echo $0 | cut -c1`"
 
 curr_dir=`pwd`
@@ -14,7 +24,7 @@ then
     FILE_PATH="$0"
 else
     echo "interesting file path: $curr_dir, $0"
-    exit 1
+    endRun 1
 fi
 
 SCRIPTS_DIR="`dirname $FILE_PATH`"
@@ -39,24 +49,21 @@ done
 # add the fuzzer in separately
 tar -rvf "$tarfile" "fuzzer"
 
-
 # Move the tarfile to the current directory
 mv "$tarfile" "$curr_dir" 
 
 # go to current directory
 cd "$curr_dir"
 
-
 ####
 
-if [[ "$@" =~ "--notest" ]]; then
+if [ -n "`echo "$@" | grep "--notest"`" ]; then
     printf -- "------------------------------------------------\n" 
-    echo "Done."
-    exit 0
+    endRun 0
 fi
 
 submission=false
-if [[ "$@" =~ "--submit" ]]; then
+if [ -n "`echo "$@" | grep "--submit"`" ]; then
     submission=true
 fi
 
@@ -118,7 +125,7 @@ if ! $submission; then
 
         echo "Testing $binary..."
         printf -- "------------------------------------------------\n" 
-        { cat "$crash" | $binary; } &> /dev/null
+        { cat "$crash" | $binary; } > /dev/null 2>&1
 
         if [[ $? -eq 139 ]]; then
             echo "Program Crashed Successfully. OK"
@@ -132,5 +139,4 @@ fi
 # Restore path
 cd "$curr_dir"
 
-printf -- "------------------------------------------------\n" 
-echo "Done."
+endRun 0
