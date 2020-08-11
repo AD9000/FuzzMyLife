@@ -1,27 +1,12 @@
-<<<<<<< HEAD
-
-## Functionality / Techniques
-
----
-
-=======
-
 # Techniques
-
-> > > > > > > 62ef0f59186627eacffef034c774b3f072611b1d
 
 Our fuzzer does fuzzing specific to each file type as well as generic fuzzing techniques for all file types.
 
 ### 1. Mutate values
 
-<<<<<<< HEAD
---- This was copied from report 1
-=======
-
 ---
 
-> > > > > > > 62ef0f59186627eacffef034c774b3f072611b1d
-> > > > > > > Maintains the format of the sample input, and changes the values of the fields one field at a time. This attempts to find basic buffer overflow and format string vulnerabilities, or difficulties with unusual characters. The values it tries are:
+Maintains the format of the sample input, and changes the values of the fields one field at a time. This attempts to find basic buffer overflow and format string vulnerabilities, or difficulties with unusual characters. The values it tries are:
 
 - integer values: 0, 2**0 to 2**20 and -2**0 to -2**20
 - string values: ASCII special characters, null bytes, unicode characters, sequences with spaces.
@@ -33,27 +18,17 @@ Our fuzzer does fuzzing specific to each file type as well as generic fuzzing te
 
 ---
 
-<<<<<<< HEAD
-
 - Mutate bytes one by one.  
-   We replace each byte position in the sample input with every possible byte value, insert every byte value in every position, and send payloads with one byte position deleted, testing all byte positions.
-  =======
-- Mutate bytes one by one. We replace each byte position in the sample input with every possible byte value, insert every byte value in every position, and send payloads with one byte position deleted, testing all byte positions.
-  > > > > > > > 62ef0f59186627eacffef034c774b3f072611b1d
-  > > > > > > > We do this in random order to get a good distribution - if the input file is short, eventually all cases will be tested. If the input file is long, it should test a variety of byte indices before the fuzzer is stopped.
-  > > > > > > > This technique is based on plaintext but runs for all file types after all other techniques have completed.
+  We replace each byte position in the sample input with every possible byte value, insert every byte value in every position, and send payloads with one byte position deleted, testing all byte positions.
+  We do this in random order to get a good distribution - if the input file is short, eventually all cases will be tested. If the input file is long, it should test a variety of byte indices before the fuzzer is stopped.
+  This technique is based on plaintext but runs for all file types after all other techniques have completed.
 
 ### 3. CSV fuzzing techniques
 
 ---
 
-<<<<<<< HEAD
-There are 2 CSV specific fuzzing techniques used. The first is increasing the number of rows. This is done by tripling the number of values in input up to 4 times. Each time the number of values is tripled, the second CSV specific fuzzing technique is run. This increases the number of columns while maintaining the number of values in the input. This occurs sequentially from having one column to having just 1 row with only valid csv input being tested (same number of columns for every row).
-=======
-
 - Increasing the number of rows. This is done by tripling the number of values in input up to 4 times. Each time the number of values is tripled, the second CSV specific fuzzing technique is run.
 - Increases the number of columns while maintaining the number of values in the input. This occurs sequentially from having one column to having just 1 row with only valid csv input being tested (same number of columns for every row).
-  > > > > > > > 62ef0f59186627eacffef034c774b3f072611b1d
 
 ### 4. JSON fuzzing techniques
 
@@ -109,73 +84,6 @@ However, you can check it out at https://github.com/AD9000/FuzzMyLife. _And star
 - Integer overflow leading to buffer size errors
 - bugs caused due to larger amounts of input than a user would normally enter (becomes buffer overflow due to logic error)
 - bugs caused due to larger amounts of nesting than a user would normally enter (becomes buffer overflow due to logic error)
-  <<<<<<< HEAD
-- anymore?
-
-## Potential improvements
-
----
-
-Dynamic analysis
-The major way in which the fuzzer could be improved is by doing some sort of dynamic analysis since right now, the fuzzer focuses on static analysis. One way dynamic analysis could be done is by attempting to map the execution pathways of a program. This would allow the fuzzer to fuzz different parts of the program. While the current version of the fuzzer is able to reach new execution paths, mapping out the pathways would make it so the fuzzer could focus on a specific part of the program rather than treating them all the same.
-
-Another way to possibly conduct dynamic analysis would be to try and incorporate GDB into the fuzzing process. Doing this would allow us to analyse the memory of the program as it is running and make decisions on how to mutate based off of it.
-
-Multithreading
-One last way we could improve the fuzzer is by using a programming language with better multithreading. The multithreading implemented here currently uses user level threads. This means that even though we use multiple threads, the programs still get CPU time at the same rate. This is because python implements something called the Global Interpreter Lock which means only one thread is able to control the python interpreter at a time. While this still provides a performance benefit due to threads needing to wait for binary files to execute, a programming language that allows for multiple threads to control the process could still boost performance.
-
----
-
-## Functionality / Techniques
-
----
-
-Our fuzzer does two fuzzing techniques sequentially:
-
-### 1. Mutate values
-
----
-
-Maintains the format of the sample input, and changes the values of the fields one field at a time. This attempts to find basic buffer overflow and format string vulnerabilities. The values it tries are:
-
-- integer values: large negative number, small negative number, 0, small positive number, large positive number. These cases may induce a segfault if the sign is unexpected, or a buffer overflow if the number affects a buffer size.
-- string values: very long strings of varying length, (for buffer overflow), long sequences of “%n” (for format string), “%1000000x” (for format string).
-
-Originally, the fuzzer tried all permutations of these values and the original values. This created far too many permutations, so we changed it to one field at a time for now. For each field, we try all testing cases (regardless of field type) while the rest of the fields remain as the sample values.
-
-### 2. Vary the size of the input structure.
-
----
-
-For CSV files, this means varying the number of fields per line, and the number of lines provided. We also run the fuzzer on these new fields.
-
-- To test the number of rows in a csv, the input size gets doubled while keeping the number of values per row equal. This only happens 8 times since the size of the inputs gets very large and starts to take a lot of time.
-- Additionally, the fuzzer tests to see if changing the number of values per row causes any errors. The number of values per row has to divide the total number of values so the choice of values per row is generated by looping from 1 to the number of values and testing each valid value in the range.
-
-## Design
-
----
-
-- First we find the type of the sample input by attempting to parse with Python's libraries.
-- When a parse is successful, we assume that that type is the correct type. To avoid false positives, we test the types in order from most to least restrictive.
-- Then we produce a dictionary of the values to fuzz in such a way that, after the values are changed by the fuzzing logic, the dictionary can be converted back into text that fits the format of the sample input.
-
-## Bugs detected
-
----
-
-- basic format string
-- basic buffer overflow
-- bugs caused due to larger amounts of input than a user would normally enter (becomes buffer overflow due to logic error)
-
-## Next steps
-
----
-
-- Mutate more than a single field at a time. A likely use case may be when the path to an overflow requires a large number provided as a length and a long string provided as the input.
-- We should also test a larger range of numbers.
-- We may need to follow and store discovered paths.
-- # We also need to optimise the current actions.
 - bugs caused due to mishandling of characters such as null byte (\x00), unicode etc.
 - Variety of logic bugs
 
@@ -190,5 +98,3 @@ Another way to possibly conduct dynamic analysis would be to try and incorporate
 
 **Even better Multithreading/Multiprocessing**  
 One last way we could improve the fuzzer is by using a programming language with better multithreading and multiprocessing support. The multithreading implemented here (and by Python) essentially uses user level threads, due to the existence of GIL. While this still provides a performance benefit due to I/O boundness, a programming language that allows for multiple threads to control the process could still boost performance. We could also implement multithreading within multiprocessing to scale the fuzzer to the next level. This would incur significant overhead, but runtime is drastically reduced.
-
-> > > > > > > 62ef0f59186627eacffef034c774b3f072611b1d
