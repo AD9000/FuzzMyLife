@@ -38,7 +38,7 @@ Maintains the format of the sample input, and changes the values of the fields o
 
 ### 6. General
 
-Finally, we also do an “invalid” fuzz which increases the size of the input in a similar way to the JSON specific technique. The difference here is there is no attempt to maintain the validity of the file format. While the output may end up being valid, there is no guarantee of it.
+- “invalid” fuzz which increases the size of the input in a similar way to the JSON specific technique. The difference here is there is no attempt to maintain the validity of the file format. While the output may end up being valid, there is no guarantee of it.
 
 ## Something Awesome
 ---
