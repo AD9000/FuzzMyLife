@@ -1,4 +1,3 @@
-from enum import Enum, auto
 import json
 import xml.etree.ElementTree as ET
 import csv
@@ -6,20 +5,8 @@ import sys
 import copy
 
 from log import *
+from fileTypes import *
 
-class FileType(Enum):
-    PLAINTEXT = auto()
-    CSV = auto()
-    JSON = auto()
-    XML = auto()
-    NONE = auto()
-
-
-count = 0
-xmlTemplate = None
-jsonTemplate = {}
-# Values can probably be removed but for now it used for debugging
-values = []
 '''
 gives file extension: txt, json => FileType
 '''
@@ -66,8 +53,9 @@ def parseCsv(pParsed) -> dict:
     parsed = []
     cpl = 0
     for line in pParsed:
-        parsed += line.split(',')
-        cpl = len(line.split(',')) - 1
+        splitLine = line.split(',')
+        parsed += splitLine
+        cpl = len(splitLine) - 1
     return { 'values': parsed, 'cpl': cpl, 'file': FileType.CSV }
 
 
@@ -75,40 +63,72 @@ def parseCsv(pParsed) -> dict:
 Reconstructs valid csv input to pass into the binary
 @param: fuzzed: Mutated input from the fuzzer
 '''
-def reconstructCsv(fuzzed: dict) -> str:
-    csv = ""
+def reconstructCsv(fuzzed: dict) -> bytes:
+    csv = []
     count = 0
     for i in fuzzed['values']:
+        if not isinstance(i, bytes):
+            i = str(i).encode() # bad?
         if count == fuzzed['cpl']:
             count = 0
-            csv += str(i) + "\n"
+            csv.extend([i, b"\n"])
         else:
-            csv += str(i) + ","
+            csv.extend([i, b","])
             count += 1
-    return csv
+    return b''.join(csv)
 
 
 '''
 Recursively parse json and generate template to be used for reconstruction 
 @param: obj: valid json to be parsed
 '''
-def recJson(obj) -> None:
-    global jsonTemplate
-    global count
-    global values
+def recJson(obj: dict, values: list = [], jsonTemplate: dict = {}, count: int = 0, tags: list = []) -> (list, dict):
     for key in obj.keys():
+        tags.append(key)
+        tmpkey = len(tags)-1
         if isinstance(obj[key], list):
-            jsonTemplate[key] = []
+            jsonTemplate[tmpkey] = []
             for value in obj[key]:
-                jsonTemplate[key].append(count)
-                count = count + 1
-                values.append(value)
+                if isinstance(value, dict):
+                    newTemplate = {}
+                    values, newTemplate, count, tags = recJson(value, values,  newTemplate, count, tags)
+                    jsonTemplate[tmpkey].append(newTemplate)
+                elif isinstance(value, list):
+                    newList, jsonTemplate, count, tags = recList(value, values,  jsonTemplate, count, tags)
+                    jsonTemplate[tmpkey].append(newList)
+                else:
+                    jsonTemplate[tmpkey].append(count)
+                    count = count + 1
+                    values.append(value)
         elif isinstance(obj[key], dict):
-            recJson(obj[key])
+            newTemplate = {}
+            values, newTemplate, count, tags = recJson(obj[key], values,  newTemplate, count, tags)
+            jsonTemplate[tmpkey] = newTemplate
         else:
-            jsonTemplate[key] = count
+            jsonTemplate[tmpkey] = count
             count = count + 1
             values.append(obj[key])
+    return values, jsonTemplate, count, tags
+
+'''
+Helper function to deal with recursive lists in json files
+'''
+def recList(obj: list, values: list = [], jsonTemplate: dict = {}, count: int = 0, tags: list = []) -> (list, dict):
+    newList = []
+    for value in obj:
+        if isinstance(value, dict):
+            newTemplate = {}
+            values, newTemplate, count, tags = recJson(value, values,  newTemplate, count, tags)
+            newList.append(newTemplate)
+        elif isinstance(value, list):
+            tmpList = recList(value, values,  jsonTemplate, count, tags)
+            newList.append(tmpList)
+        else:
+            newList.append(count)
+            count = count + 1
+            values.append(value)
+    return newList, jsonTemplate, count, tags
+
 
 '''
 Parses the json file to generate input dict for the fuzzer
@@ -116,42 +136,65 @@ Parses the json file to generate input dict for the fuzzer
 '''
 def parseJson(pParsed)-> dict:
     logger.debug(pParsed)
-    global jsonTemplate
-    global values
-    global count
-    count = 0
-    values = []
-    jsonTemplate = {}
-    recJson(pParsed)
-    return { 'values': values, 'template': jsonTemplate, 'file': FileType.JSON }
+    values, jsonTemplate, _, tags = recJson(pParsed)
+    return { 'values': values, 'tags': tags, 'template': jsonTemplate, 'file': FileType.JSON }
 
 
 '''
 Recursively replace template with values to create valid json input 
-@param: obj: template to be used
+@param: tmpl: template to be used
 @param: values: values dict to be inserted
 '''
-def repJson(obj, values) -> None:
-    for key in obj.keys():
-        if isinstance(obj[key], list):
+def repJson(tmpl: dict, values: list, tags: list) -> None:
+    obj = {}
+    for tmpkey in tmpl.keys():
+        key = tags[tmpkey]
+        if isinstance(tmpl[tmpkey], list):
             replist = []
-            for value in obj[key]:
-                replist.append(values[value])
+            for value in tmpl[tmpkey]:
+                if isinstance(value, dict):
+                    newobj = repJson(value, values, tags)
+                    replist.append(newobj)
+                elif isinstance(value, list):
+                    tmpList = repList(value, values, tags)
+                    replist.append(tmpList)
+                else:
+                    replist.append(values[value])
             obj[key] = replist
-        elif isinstance(obj[key], dict):
-            repJson(obj[key], values)
+        elif isinstance(tmpl[tmpkey], dict):
+            newobj = repJson(tmpl[tmpkey], values, tags)
+            obj[key] = newobj
         else:
-            obj[key] = values[obj[key]]
+            obj[key] = values[tmpl[tmpkey]]
+    return obj
+
+'''
+Helper function to deal with recursive lists in json
+'''
+def repList(l: list, values: list, tags: list) -> None:
+    newList = []
+    for value in l:
+        if isinstance(value, dict):
+            newobj = repJson(value, values, tags)
+            newList.append(newobj)
+        elif isinstance(value, list):
+            tmpList = repList(value, values, tags)
+            newList.append(tmpList)
+        else:
+            newList.append(values[value])
+    return newList
+
 
 '''
 Reconstructs valid json input to pass into the binary
 @param: fuzzed: Mutated input from the fuzzer
 '''
-def reconstructJson(fuzzed: dict) -> str:
-    obj = copy.deepcopy(fuzzed['template'])
+def reconstructJson(fuzzed: dict) -> bytes:
+    # obj = copy.deepcopy(fuzzed['template'])
     values = fuzzed['values']
-    repJson(obj, values)
-    return json.dumps(obj)
+    obj = repJson(fuzzed['template'], values, fuzzed['tags'])
+    return json.dumps(obj, ensure_ascii=False).encode()
+    # I don't think ensure_ascii is actually doing anything
 
 
 '''
@@ -166,51 +209,53 @@ def parsePlaintext(pParsed) -> dict:
 Reconstructs valid plaintext input to pass into the binary
 @param: fuzzed: Mutated input from the fuzzer
 '''
-def reconstructPlaintext(fuzzed: dict) -> str:
-    pt = ""
+def reconstructPlaintext(fuzzed: dict) -> bytes:
+    pt = b""
     for i in range(0, len(fuzzed['values'])):
-        if i == (len(fuzzed['values']) - 1):
-            pt += str(fuzzed['values'][i])
+        if isinstance(fuzzed['values'][i], bytes):
+            pt += fuzzed['values'][i]
         else:
-            pt += str(fuzzed['values'][i]) + "\n"
+            pt += str(fuzzed['values'][i]).encode() # bad
+        if i < (len(fuzzed['values']) - 1):
+            pt += b"\n"
     return pt
 
 '''
-Recursively parse xml and generate template to be used for reconstruction 
+Recursively parse xml and generate template to be used for fuzzing & reconstruction 
 @param: root: Root node of the XML elementTree
 '''
-def recXml(root) -> None:
-    global count
-    global values
+def recXml(root, values: list = [], vcount: int = 0, tags: list = []) -> (list, int, list):
+    tags.append(root.tag)
+    root.tag = str(len(tags)-1)
+    # logger.debug(root.tag)
+
     for child in root:
+        # logger.debug(child.tag, child.attrib, child.text)
         if len(child.attrib) > 0:
             replace = {}
             for key in dict(child.attrib).keys():
                 values.append(key)
                 values.append(dict(child.attrib)[key])
-                replace[str(count)] = str(count + 1)
-                count = count + 2
+                replace[str(vcount)] = str(vcount + 1)
+                vcount = vcount + 2
             child.attrib = replace
         if child.text is not None and "\n      " not in child.text:
             values.append(child.text)
-            child.text = str(count)
-            count = count + 1
-        recXml(child)
+            child.text = str(vcount)
+            vcount = vcount + 1
+        values, vcount, tags = recXml(child, values, vcount, tags)
+    return values, vcount, tags
 
 '''
 Parses the xml file to generate input dict for the fuzzer
 @param: pParsed: Partially parsed input from classifyFile()
 '''
 def parseXml(pParsed) -> dict:
-    global xmlTemplate
-    global count
-    global values
-    values = []
     root = pParsed.getroot()
-    recXml(root)
+    values, _, tags = recXml(root)
+    # logger.debug(tags)
     xmlTemplate = root
-    count = 0
-    return {'values': values, 'template': xmlTemplate, 'file': FileType.XML }
+    return {'values': values, 'tags': tags, 'template': xmlTemplate, 'file': FileType.XML }
 
 
 '''
@@ -218,29 +263,34 @@ Recursively replace template with values to create valid xml input
 @param: root: Root node of the xml element tree template
 @param: values: Values array to be inserted into the template
 '''
-def repXml(root, values) -> None:
+def repXml(root, values, tags) -> None:
+    root.tag = str(tags[int(root.tag)])
+    # logger.debug(root.tag)
     for child in root:
+        # logger.debug(child.tag, child.attrib)
+        # child.attrib is a dictionary where each field contains the values index of its new value
         if len(child.attrib) > 0:
             replace = {}
             for key in dict(child.attrib).keys():
                 replace[values[int(key)]] = values[int(dict(child.attrib)[key])]
             child.attrib = replace
+            # logger.debug(child.attrib)
         if child.text is not None and "\n      " not in child.text:
             child.text = values[int(child.text)]
-        repXml(child, values)
+        repXml(child, values, tags)
 
 '''
 Reconstructs valid xml input to pass into the binary
 @param: fuzzed: Mutated input from the fuzzer
 '''
-def reconstructXml(fuzzed: dict) -> str:
+def reconstructXml(fuzzed: dict) -> bytes:
     root = copy.deepcopy(fuzzed['template'])
     values = fuzzed['values']
     for i in range(0, len(values)):
         if isinstance(values[i], int):
             values[i] = str(values[i])
-    repXml(root, values)
-    return ET.tostring(root).decode()
+    repXml(root, values, fuzzed['tags'])
+    return ET.tostring(root)
 
 
 '''
@@ -254,13 +304,15 @@ convert the input file to something the fuzzer likes (a dictionary)
 def getDictFromInput(inputFileName: str) -> dict:
     fileType, pparsed = classifyFile(inputFileName)
     logger.debug(fileType)
-    return parsers[fileType](pparsed)
+    a = parsers[fileType](pparsed)
+    logger.debug(a)
+    return a
 
 '''
 convert back the dictionary from the fuzzer to valid input
 '''
-def getInputFromDict(dic: dict) -> str:
-    output = ""
+def getInputFromDict(dic: dict) -> bytes:
+    output = b""
     if dic['file'] == FileType.JSON:
         output = reconstructJson(dic)
     elif dic['file'] == FileType.PLAINTEXT:

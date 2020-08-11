@@ -1,0 +1,31 @@
+#!/bin/sh
+
+# Adds all the aliases to the current terminal session
+check="`echo $0 | cut -c1`"
+curr_dir=`pwd`
+FILE_PATH=""
+
+if [ $check = '.' ]
+then
+    FILE_PATH="$curr_dir`echo $0 | cut -c2-`"
+elif [ $check = '/' ]
+then
+    FILE_PATH="$0"
+else
+    echo "interesting file path: $curr_dir, $0"
+    exit 1
+fi
+
+SCRIPTS_DIR="`dirname $FILE_PATH`"
+ROOT_DIR="`dirname $SCRIPTS_DIR`"
+
+uuid="`cat /proc/sys/kernel/random/uuid`"
+
+grep -v "$ROOT_DIR/" ~/.bash_aliases >> "/tmp/$uuid"
+
+cp "/tmp/$uuid" ~/.bash_aliases
+
+rm "/tmp/$uuid"
+
+echo "Done. Restart/Open new terminal for the changes to take effect"
+

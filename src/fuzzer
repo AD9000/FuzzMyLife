@@ -3,86 +3,55 @@ import sys
 import os
 
 import parse
-import gen_fuzz
-import line_fuzz
-from log import *
+import mutator
+import thread_manager
 
-'''
-Show the input that crashed the program returned from the fuzzers
-'''
-def handleCrash(crashInput):
+from queue import Queue
+from log import logger, CRASH_DIR
+
+import timeit
+import math
+
+crashFile = 'bad.txt'
+
+if '--crashfile' in sys.argv:
+    index = sys.argv.index('--crashfile')
+    crashFile = sys.argv[index + 1]
+    
+def handleCrash(crashInput: bytes) -> bool:
+    global crashFile
     if crashInput is not None:
-        logger.info("Found crash")
-        logger.info(crashInput)
-        with open(os.path.join(ROOT_DIR, "bad.txt"), "w") as badtxt:
+        logger.info("\nFound crash")
+        with open(os.path.join(CRASH_DIR, crashFile), "wb") as badtxt:
             badtxt.write(crashInput)
-        logger.info('\n\nBad input written to ' + os.path.join(ROOT_DIR, 'bad.txt'))
+        logger.info('Bad input written to ' + os.path.join(CRASH_DIR, crashFile))
         return True
     return False
 
-'''
-Cleanup, logging before exit
-'''
-def exitSafely(code=0):
-    logger.info('Done')
-    exit(0)
-
-'''
-Check that user has passed in args properly, otherwise print usage
-'''
 def checkArgs():
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         logger.info(f"Usage: {sys.argv[0]} binaryfilename inputfilename")
-        exitSafely()
-
-'''
-Runs the line fuzzer from line_fuzz
-'''
-def runLineFuzzer(binary, inputDict):
-    logger.debug('starting line fuzzer...')
-    
-    # running the line fuzzer, that mutates the amount of input
-    crashInput = line_fuzz.lineFuzz(binary, inputDict)
-    logger.debug('finished running line fuzzer')
-
-    # Check if there was a crash
-    if handleCrash(crashInput):
-        exitSafely()
-
-'''
-Runs the general fuzzer from gen_fuzz
-'''
-def runGeneralFuzzer(binary, inputDict):
-    logger.debug('starting general fuzzer...')
-
-    # running the general fuzzer, mutates input values
-    crashInput = gen_fuzz.generalFuzz(binary, inputDict)
-    logger.debug('finished running general fuzzer')
-
-    # Check if there was a crash
-    if handleCrash(crashInput):
-        exitSafely()
+        exit(0)
 
 if __name__ == "__main__":
     checkArgs()
 
-    # extract args
     binary = sys.argv[1]
     inputFileName = sys.argv[2]
 
-    # logs for sanity
-    logger.debug(binary)
-    logger.debug(inputFileName)
-    logger.info('Starting fuzzer...')
-
-    # parse input into an array for the fuzzer
     inputDict = parse.getDictFromInput(inputFileName)
+    thread_manager.setBinary(binary)
     
-    runLineFuzzer(binary, inputDict)
-    runGeneralFuzzer(binary, inputDict)
-    
-    # all fuzzers failed
-    logger.info(":'(")
-    logger.info('done')
+    # run once with sample input to get runtime. timeout = 5+runtime
+    # might be pointless because all the sample binaries run in << 1 second anyway
+    t = timeit.timeit(stmt=f"sp.call('{binary}', stdin=fp, stdout=sp.DEVNULL, stderr=sp.DEVNULL)", setup=f"import subprocess as sp; fp=open('{inputFileName}', 'rb')", number=1)
+    logger.info(f"runtime: {t}")
+    runtime = math.ceil(t)
 
-        
+    logger.info('\nStarting fuzzer...\n')
+
+    crashInput = thread_manager.fuzzMyLife(inputDict, runtime)
+    if handleCrash(crashInput):
+        logger.info("done")
+    else:
+        logger.info("failed :'(")

@@ -1,0 +1,70 @@
+#!/usr/bin/python3
+import sys
+import os
+
+import parse
+import line_fuzz
+import threaded_fuzz
+from log import *
+
+def handleCrash(crashInput):
+    if crashInput is not None:
+        logger.info("Found crash")
+        logger.info(crashInput)
+        with open(os.path.join(ROOT_DIR, "bad.txt"), "w") as badtxt:
+            badtxt.write(crashInput)
+        logger.info('\n\nBad input written to ' + os.path.join(ROOT_DIR, 'bad.txt'))
+        return True
+    return False
+
+def exitSafely(code = 0):
+    logger.info('Done')
+    exit(0)
+
+def checkArgs():
+    if len(sys.argv) != 3:
+        logger.info(f"Usage: {sys.argv[0]} binaryfilename inputfilename")
+        exitSafely()
+
+def runLineFuzzer(binary, inputDict):
+    logger.debug('starting line fuzzer...')
+    
+    # running the line fuzzer, that mutates the amount of input
+    crashInput = line_fuzz.lineFuzz(binary, inputDict)
+    logger.debug('finished running line fuzzer')
+
+    # Check if there was a crash
+    if handleCrash(crashInput):
+        exitSafely()
+
+def runGeneralFuzzer(binary, inputDict):
+    logger.debug('starting general fuzzer...')
+
+    # running the general fuzzer, mutates input values
+    # crashInput = gen_fuzz.generalFuzz(binary, inputDict)
+    crashInput = threaded_fuzz.threadedFuzz(binary, inputDict)
+    logger.debug('finished running threaded fuzzer')
+
+    # Check if there was a crash
+    if handleCrash(crashInput):
+        exitSafely()
+
+if __name__ == "__main__":
+    checkArgs()
+
+    # extract args
+    binary = sys.argv[1]
+    inputFileName = sys.argv[2]
+
+    # logs for sanity
+    logger.info('Starting fuzzer...')
+
+    # parse input into an array for the fuzzer
+    inputDict = parse.getDictFromInput(inputFileName)
+    
+    runGeneralFuzzer(binary, inputDict)
+    runLineFuzzer(binary, inputDict)
+    
+    # all fuzzers failed
+    logger.info(":'(")
+    logger.info('done')

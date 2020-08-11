@@ -1,0 +1,109 @@
+#!/bin/sh
+
+usage() {
+    echo "Usage: ./runFuzzer /path/to/binary /path/to/input OR ./runFuzzer <name_of_binary_in_FuzzMyLife/bin_folder"
+    endRun 0
+}
+
+endRun () {
+    endTime="`date +%s`"
+    runTime=$((endTime - startTime))
+    printf -- "------------------------------------------------\n" 
+    echo "Done in $runTime seconds"
+    exit $1
+}
+
+startTime="`date +%s`"
+
+if [ $# -lt 1 ]; then
+    usage
+elif [ $# -gt 2 ]; then
+    usage
+fi
+
+# run the fuzzer 
+check="`echo $0 | cut -c1`"
+curr_dir=`pwd`
+FILE_PATH=""
+
+if [ $check = '.' ]
+then
+    FILE_PATH="$curr_dir`echo $0 | cut -c2-`"
+elif [ $check = '/' ]
+then
+    FILE_PATH="$0"
+else
+    echo "interesting file path: $curr_dir, $0"
+    endRun 1
+fi
+
+SCRIPTS_DIR="`dirname $FILE_PATH`"
+ROOT_DIR="`dirname $SCRIPTS_DIR`"
+
+# if one argument:
+if [ $# -eq 1 ]
+then
+    snippet="$1"
+    
+    # finding the binary
+    binary=""
+    input=""
+    for file in $ROOT_DIR/bin/*.txt
+    do
+        if [ -z "`echo "$file" | grep "$snippet"`" ]
+        then
+            continue
+        else
+            binary="`echo "$file" | sed s/\.txt//`"
+            input="$file"
+        fi
+    done
+
+    if [ -z "$binary" ]
+    then
+        echo "could not find binary for: $1"
+        endRun 0
+    elif [ -z "$input" ]
+    then
+        echo "could not find valid input for: $1 with binary $binary"
+        endRun 0
+    else
+        # Unique directory to store logs
+        uuid="`date "+%H:%M:%S_%Y-%m-%d"`"
+
+        # create directory
+        mkdir -p "$ROOT_DIR"/logs/$uuid
+
+        # get the logfile and crashfile
+        replacer="`dirname "$binary"`"
+        crashfile="`echo "$input" | sed "s!$replacer!!" | cut -c2-`"
+
+        binName="`echo "$crashfile" | sed s/\.txt//`"
+        logfile="$binName.log"
+
+        $ROOT_DIR/src/fuzzer "$binary" "$input" -d --logfile $uuid/$logfile --crashfile $uuid/$crashfile
+    fi
+# Two arguments
+else
+    binary="$1"
+    input="$2"
+    
+    # Unique directory to store logs
+    uuid="`date "+%H:%M:%S_%Y-%m-%d"`"
+
+    # create directory
+    mkdir -p "$ROOT_DIR"/logs/$uuid
+
+    # get the logfile and crashfile
+    replacer="`dirname "$binary"`"
+    crashfile="`echo "$input" | sed "s!$replacer!!" | cut -c2-`"
+
+    binName="`echo "$crashfile" | sed s/\.txt//`"
+    logfile="$binName.log"
+
+    crashfile="`echo "$crashfile" | sed s/\.txt/\.crash/`"
+
+    $ROOT_DIR/src/fuzzer $1 $2 -d --logfile $uuid/$logfile --crashfile $uuid/$crashfile
+fi
+
+endRun 0

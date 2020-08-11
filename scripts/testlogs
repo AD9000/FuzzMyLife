@@ -1,0 +1,63 @@
+#!/bin/sh
+
+# chuck everything from the log directory to the binaries
+endRun () {
+    endTime="`date +%s`"
+    runTime=$((endTime - startTime))
+    printf -- "------------------------------------------------\n" 
+    echo "Done in $runTime seconds"
+    exit $1
+}
+
+startTime="`date +%s`"
+check="`echo $0 | cut -c1`"
+
+curr_dir=`pwd`
+FILE_PATH=""
+
+if [ $check = '.' ]
+then
+    FILE_PATH="$curr_dir`echo $0 | cut -c2-`"
+elif [ $check = '/' ]
+then
+    FILE_PATH="$0"
+else
+    echo "interesting file path: $curr_dir, $0"
+    endRun 1
+fi
+
+SCRIPTS_DIR="`dirname $FILE_PATH`"
+ROOT_DIR="`dirname $SCRIPTS_DIR`"
+
+logdir="$1"
+
+if [ -z "$logdir" ]; then
+    echo "Usage: $0 /path/to/log/directory"
+    endRun 0
+fi
+
+# Test that the crashes work:
+printf -- "\n------------------------------------------------\n" 
+echo "> Testing crashes..."
+printf -- "------------------------------------------------\n" 
+
+for crash in "$logdir"/*.crash
+do
+    filename="`echo "$crash" | sed s!$logdir/!! | sed s/\.crash$//`"
+
+    binary="$ROOT_DIR/bin/$filename"
+
+    echo "Testing $binary..."
+    printf -- "------------------------------------------------\n" 
+
+    { cat "$crash" | $binary; } > /dev/null 2>&1
+
+    if [ $? -eq 139 ]; then
+        echo "Program Crashed Successfully. OK"
+    else
+        echo "No crash detected"
+    fi
+    echo ""
+done
+
+endRun 0
