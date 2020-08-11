@@ -57,13 +57,13 @@ cd "$curr_dir"
 
 ####
 
-if [ -n "`echo "$@" | grep "--notest"`" ]; then
+if [ -n "`echo "$@" | grep -- "--notest"`" ]; then
     printf -- "------------------------------------------------\n" 
     endRun 0
 fi
 
 submission=false
-if [ -n "`echo "$@" | grep "--submit"`" ]; then
+if [ -n "`echo "$@" | grep -- "--submit"`" ]; then
     submission=true
 fi
 
@@ -110,10 +110,11 @@ do
     fi
 done
 
-# move logs back
-mv ../logs/ .
 
 if ! $submission; then
+    # move logs back
+    mv ../logs/ .
+    
     # Test that the crashes work:
     printf -- "\n------------------------------------------------\n" 
     echo "> Testing crashes..."
