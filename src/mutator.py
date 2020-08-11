@@ -231,6 +231,7 @@ def invalidMultiplyInput(inputDict: dict, repeatTimes: int = 15):
         inputString = rawInput * multiplier
         sendBuffer.put(inputString)
 
+
 # return dict of Nodes: node: [parents]
 def findXMLNodes(root, nodes: dict = {}) -> dict:
     for child in root:
@@ -251,30 +252,44 @@ def sendXML(root):
 
 Change = collections.namedtuple('Change', 'src dst parent')
 
-def addChange(changesstack: List[Change], src, dst, nodes: dict, removeParent = False):
-    if removeParent == False: # don't delete old parent - its a copy not a move
-        changesstack.extend([Change(src, dst, None)])
-        dst.append(src)
-        nodes[src].append(dst)
-    else:
-        parent = nodes[src].pop()
-        changesstack.extend([Change(src, dst, parent)])
-        dst.append(src)
-        nodes[src].append(dst)
+# make change to nodes dictionary and xml tree
+def makeChange(src, dst, parent, nodes: dict):
+    dst.append(src)
+    nodes[src].append(dst)
+    if parent is not None:
         parent.remove(src)
 
+# undo change to nodes dictionary and xml tree
+def undoChange(src, dst, parent, nodes: dict):
+    dst.remove(src)
+    nodes[src].pop()
+    # a = nodes[src].pop()
+    # assert(a == dst)
+    if parent is not None:
+        parent.append(src)
+        nodes[src].append(parent)
+    
+# push change onto changesstack and run makeChange()
+def pushChange(changesstack: List[Change], src, dst, nodes: dict, removeParent = False):
+    if removeParent == False: # don't delete old parent - its a copy not a move
+        changesstack.append(Change(src, dst, None))
+        makeChange(src, dst, None, nodes)
+    else:
+        parent = nodes[src].pop()
+        changesstack.append(Change(src, dst, parent))
+        makeChange(src, dst, parent, nodes)
+    # parent = removeParent ? nodes[src].pop() : None
+
+# pop change from changesstack and run undoChange()
 def popChange(changesstack: List[Change], nodes: dict):
     change = changesstack.pop()
-    change.dst.remove(change.src)
-    nodes[change.src].pop()
-    if change.parent is not None:
-        change.parent.append(change.src)
-        nodes[change.src].append(change.parent)
+    undoChange(change.src, change.dst, change.parent, nodes)
 
 def popAllChanges(changesstack, nodes: dict):
     while changesstack != []:
         popChange(changesstack, nodes)
 
+# Send 100 mutations on current root
 def mutationsXML(nodes: dict, root):
     changesstack = []
     
@@ -285,14 +300,14 @@ def mutationsXML(nodes: dict, root):
         validDstNodes = list(removeNode(nodes.copy(), src))
         if validDstNodes == []:
             popChange(changesstack, nodes)
-            # now what? continue but don't count this as an iteration
+            # continue but don't count this as an iteration
             continue
 
         dst = random.choice(validDstNodes)
         if random.randint(0, 1) == 0:
-            addChange(changesstack, src, dst, nodes) # copy
+            pushChange(changesstack, src, dst, nodes) # copy
         else:
-            addChange(changesstack, src, dst, nodes, removeParent=True) # move
+            pushChange(changesstack, src, dst, nodes, removeParent=True) # move
         sendXML(root)
         if random.randint(0, 4) == 0: # 25% chance to make new mutation, 75% chance to continue this one
             popAllChanges(changesstack, nodes)
@@ -320,18 +335,16 @@ def mutateXML(inputDict: dict):
         validDstNodes = list(removeNode(nodes.copy(), src))
         for dst in random.sample(validDstNodes, len(validDstNodes)):
             parent = nodes[src].pop()
-            dst.append(src)
-            nodes[src].append(dst) # set new parent
-            parent.remove(src) # remove from old parent
+            makeChange(src, dst, parent, nodes)
+
             sendXML(root)
             mutationsXML(nodes, root)
-            dst.remove(src)
-            parent.append(src)
-            nodes[src].remove(dst)
-            nodes[src].append(parent)
+
+            undoChange(src, dst, parent, nodes)
         if not crashBuffer.empty():
             return
 
+# some specific empty testcases
 def emptyFile(inputDict: dict):
     sendBuffer.put(b'')
     sendBuffer.put(b'{}')
