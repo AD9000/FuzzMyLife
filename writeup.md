@@ -18,7 +18,8 @@ Maintains the format of the sample input, and changes the values of the fields o
 
 ---
 
-- Mutate bytes one by one. We replace each byte position in the sample input with every possible byte value, insert every byte value in every position, and send payloads with one byte position deleted, testing all byte positions.
+- Mutate bytes one by one.  
+  We replace each byte position in the sample input with every possible byte value, insert every byte value in every position, and send payloads with one byte position deleted, testing all byte positions.
   We do this in random order to get a good distribution - if the input file is short, eventually all cases will be tested. If the input file is long, it should test a variety of byte indices before the fuzzer is stopped.
   This technique is based on plaintext but runs for all file types after all other techniques have completed.
 
@@ -53,6 +54,7 @@ Finally, we also do an “invalid” fuzz which increases the size of the input 
 Since a large component of fuzzing logic is the same regardless of file type we implemented a generic fuzzing section.
 We generalise all file formats to a standard protocol which allows us to fuzz fields using a standard set of values.
 The benefit of doing this is we are able to fuzz for common vulnerabilities on any file type while minimising code repetition. We are also able to add new file formats and protocols easily since we just need to create functions to parse and reconstruct the format.
+
 **Implementation**  
 To avoid false positives in parsing, we test the types in order from most to least restrictive i.e. xml -> json -> csv -> other.
 We use a dictionary with a values key which contains an array of all the values in the input, and a tags key where appropriate which contains an array of the tags/headers. It also has a template key which is used for reconstructing the input before it is sent to the binary.
@@ -67,8 +69,6 @@ The number of consumers we found most effective is 3 times the number of logical
 This architecture also scales extremely well for development. All fuzzing techniques are entirely decoupled from each other (unless techniques naturally combine), and also from all interactions with the binary. The mutation function only needs to focus on how it generates different inputs, and pass these to a buffer. The function will then be called by the producer thread when it is needed.
 
 ## Something Awesome: Command API
-
----
 
 The fuzzer includes multiple shell scripts which run and test the fuzzer in an effective and convenient way. These include some automated testing scripts so you can test all binaries in the ./bin folder with a single command. It also uses a logger which stores the output of each mutation, and helps develop an understanding of the dynamic behavior of the binary. (It logs the output and possibly errors from each run of the binary). Together, they prove to be very useful for the rapid and iterative process of building and improving said fuzzer. This is a sort of DevOps side of the fuzzer to reduce boilerplate and maintenance so we can focus on the more important parts, such as implementing different fuzzing techniques.
 
