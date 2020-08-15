@@ -1,5 +1,5 @@
 # FuzzMyLife
-Binary fuzzer for 6447: Fuzz binaries as you like!
+Binary fuzzer: Fuzz binaries as you like!
 
 ## Techniques
 For a detailed description of how the fuzzer works, have a look at [writeup.md](https://github.com/AD9000/FuzzMyLife/blob/master/writeup.md)
